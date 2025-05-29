@@ -199,6 +199,11 @@ const GridComponent: React.FC = () => {
 
 ## Important Notes
 
+### Limitations
+
+- The child-locator can only detect direct child components of the component referenced by containerRef.
+  For example, grandchild components of nested descendant components cannot be detected.
+
 ### Performance Considerations
 
 - The hook uses multiple observers (MutationObserver, ResizeObserver, IntersectionObserver) for comprehensive monitoring
