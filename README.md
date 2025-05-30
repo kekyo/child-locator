@@ -7,6 +7,7 @@ A React Hook for detecting child components at specific XY coordinates within a 
 ## Features
 
 - **XY Coordinate Detection**: Precisely locate child components at specified coordinates
+- **CSS Unit Support**: Coordinate values support px (number), %, vw, vh, rem, em (string) units
 - **Real-time Monitoring**: Automatically detects changes in child elements using MutationObserver, ResizeObserver, and IntersectionObserver
 - **Distance Calculation**: Provides Euclidean distance from target coordinates to detected elements
 - **TypeScript Support**: Full TypeScript support with comprehensive type definitions
@@ -43,7 +44,7 @@ const ParentComponent = () => {
   const containerRef = useRef<HTMLDivElement>(null)
   
   const { detected, childrenCount, isEnabled } = useLocator(containerRef, {
-    offset: { x: 100, y: 150 }, // Target coordinates
+    offset: { x: '50%', y: '30%' }, // CSS units supported: px, %, vw, vh, rem, em
     onDetect: (component: DetectedComponent) => {
       if (component.element) {
         console.log('Detected element:', component.element)
@@ -93,9 +94,11 @@ interface UseLocatorOptions {
 
 ```tsx
 interface OffsetCoordinates {
-  x: number  // X offset from container's left edge (pixels)
-  y: number  // Y offset from container's top edge (pixels)
+  x: CSSUnitValue  // X coordinate - supports px (number), %, vw, vh, rem, em (string)
+  y: CSSUnitValue  // Y coordinate - supports px (number), %, vw, vh, rem, em (string)
 }
+
+type CSSUnitValue = number | string
 ```
 
 #### Return Value
@@ -137,12 +140,70 @@ Registers a React component with its corresponding HTML element for reverse look
 
 ## Advanced Usage
 
+### CSS Unit Support Examples
+
+```tsx
+const CoordinateExamples: React.FC = () => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [coordinateType, setCoordinateType] = useState<string>('percentage')
+  
+  // Different coordinate examples
+  const coordinateExamples = {
+    percentage: { x: '50%', y: '25%' },
+    viewport: { x: '10vw', y: '15vh' },
+    relative: { x: '5rem', y: '3em' },
+    pixels: { x: 200, y: 150 }
+  }
+  
+  const { detected } = useLocator(containerRef, {
+    offset: coordinateExamples[coordinateType as keyof typeof coordinateExamples],
+    onDetect: (component) => {
+      if (component.element) {
+        console.log(`Detected at ${coordinateType}:`, component.element)
+      }
+    }
+  })
+  
+  return (
+    <div>
+      <div>
+        <h3>CSS Unit Examples</h3>
+        <label>
+          Coordinate Type:
+          <select 
+            value={coordinateType} 
+            onChange={(e) => setCoordinateType(e.target.value)}
+          >
+            <option value="percentage">Percentage (50%, 25%)</option>
+            <option value="viewport">Viewport (10vw, 15vh)</option>
+            <option value="relative">Relative (5rem, 3em)</option>
+            <option value="pixels">Pixels (200px, 150px)</option>
+          </select>
+        </label>
+      </div>
+      
+      <div 
+        ref={containerRef}
+        style={{
+          width: '600px',
+          height: '400px',
+          border: '2px solid #333',
+          position: 'relative'
+        }}
+      >
+        {/* Your child components here */}
+      </div>
+    </div>
+  )
+}
+```
+
 ### Grid Layout Detection
 
 ```tsx
 const GridComponent: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [targetCoords, setTargetCoords] = useState({ x: 100, y: 100 })
+  const [targetCoords, setTargetCoords] = useState({ x: '25%', y: '50%' })
   
   const { detected } = useLocator(containerRef, {
     offset: targetCoords,
@@ -159,21 +220,19 @@ const GridComponent: React.FC = () => {
     <div>
       <div>
         <label>
-          X: <input 
-            type="range" 
-            min="0" 
-            max="400" 
+          X (CSS Unit): <input 
+            type="text" 
             value={targetCoords.x}
-            onChange={(e) => setTargetCoords(prev => ({ ...prev, x: +e.target.value }))}
+            placeholder="e.g., 50%, 200px, 10vw"
+            onChange={(e) => setTargetCoords(prev => ({ ...prev, x: e.target.value }))}
           />
         </label>
         <label>
-          Y: <input 
-            type="range" 
-            min="0" 
-            max="300" 
+          Y (CSS Unit): <input 
+            type="text" 
             value={targetCoords.y}
-            onChange={(e) => setTargetCoords(prev => ({ ...prev, y: +e.target.value }))}
+            placeholder="e.g., 30%, 150px, 5vh"
+            onChange={(e) => setTargetCoords(prev => ({ ...prev, y: e.target.value }))}
           />
         </label>
       </div>
@@ -212,9 +271,15 @@ const GridComponent: React.FC = () => {
 
 ### Coordinate System
 
-- Coordinates are relative to the container element's top-left corner
-- The coordinate system follows standard web conventions (0,0 at top-left)
-- Coordinates outside the container bounds will detect the closest child element
+- **Flexible Units**: Supports multiple CSS unit types:
+  - **Pixels (number)**: Direct pixel values (e.g., `100`, `250`)
+  - **Percentages (string)**: Relative to container size (e.g., `'50%'`, `'25%'`)
+  - **Viewport units (string)**: Relative to viewport (e.g., `'10vw'`, `'15vh'`)
+  - **Font-relative units (string)**: `'rem'` (root) and `'em'` (element) units
+- **Container-relative**: Coordinates are relative to the container element's content area (excluding padding)
+- **Standard conventions**: Follows web coordinate system (0,0 at top-left)
+- **Automatic conversion**: CSS units are converted to pixels internally for precise detection
+- **Responsive design**: Percentage and viewport units automatically adapt to size changes
 
 ### Component Registration
 
@@ -286,6 +351,13 @@ MIT License - see LICENSE file for details.
 5. Submit a pull request
 
 ## Changelog
+
+### 0.2.0
+- **CSS Unit Support**: Added support for multiple coordinate unit types (px, %, vw, vh, rem, em)
+- **Flexible Coordinate System**: Coordinates now accept both number (pixels) and string (CSS units) values
+- **Responsive Design**: Percentage and viewport units automatically adapt to container and viewport size changes
+- **Enhanced API**: Updated `OffsetCoordinates` interface to support `CSSUnitValue` type
+- **Improved Examples**: Added comprehensive CSS unit usage examples in documentation
 
 ### 0.1.0
 - Initial release with XY coordinate detection

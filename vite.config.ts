@@ -2,10 +2,21 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import { resolve } from 'path'
+import checker from 'vite-plugin-checker'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    checker({
+      typescript: {
+        tsconfigPath: 'tsconfig.app.json'
+      }
+    })
+  ],
+  server: {
+    port: 59517
+  },
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),

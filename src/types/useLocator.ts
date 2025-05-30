@@ -1,6 +1,12 @@
 import type { ReactElement } from 'react'
 
 /**
+ * CSS unit value type that supports both numeric (px) and string (%, vw, vh, rem, em) values
+ * Similar to React.CSSProperties values but specifically for coordinate positioning
+ */
+export type CSSUnitValue = number | string
+
+/**
  * Information about the detected child component
  */
 export interface DetectedComponent {
@@ -15,13 +21,13 @@ export interface DetectedComponent {
 }
 
 /**
- * Offset coordinates
+ * Offset coordinates with CSS unit support
  */
 export interface OffsetCoordinates {
-  /** X-axis offset (pixels from container's left edge) */
-  x: number
-  /** Y-axis offset (pixels from container's top edge) */
-  y: number
+  /** X coordinate - supports px (number), %, vw, vh, rem, em (string) */
+  x: CSSUnitValue
+  /** Y coordinate - supports px (number), %, vw, vh, rem, em (string) */
+  y: CSSUnitValue
 }
 
 /**

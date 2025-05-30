@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import type { DetectedComponent, UseLocatorOptions, UseLocatorReturn } from '../types/useLocator'
 import { findElementAtOffset, getComponentFromElement } from '../utils/componentRegistry'
+import { InvisibleElementManager } from '../utils/invisibleElementManager'
 
 /**
  * A Hook that monitors child components of a specified component and
@@ -33,6 +34,29 @@ export const useLocator = (
   const currentValuesRef = useRef({ offset, enabled, onDetect })
   currentValuesRef.current = { offset, enabled, onDetect }
   
+  // Function to convert CSS units to px values
+  const convertToPixels = useCallback((
+    container: HTMLElement,
+    x: number | string,
+    y: number | string
+  ): { x: number; y: number } => {
+    // Return as-is if it's a number
+    if (typeof x === 'number' && typeof y === 'number') {
+      return { x, y }
+    }
+    
+    // For CSS units, use invisible element for conversion
+    const manager = new InvisibleElementManager()
+    manager.setContainer(container)
+    
+    try {
+      const position = manager.getPositionFromCSSUnits(x, y)
+      return position || { x: 0, y: 0 }
+    } finally {
+      manager.cleanup()
+    }
+  }, [])
+
   // Stabilize onDetect callback
   const stableOnDetect = useCallback((component: DetectedComponent) => {
     // Hash the result to detect changes
@@ -72,14 +96,19 @@ export const useLocator = (
         
         const targetElement = findElementAtOffset(refTarget.current, currentOffset)
         const containerRect = refTarget.current.getBoundingClientRect()
-        const targetX = containerRect.left + currentOffset.x
-        const targetY = containerRect.top + currentOffset.y
-        const newChildrenCount = refTarget.current.children.length
+        
+        // Convert CSS units to px values
+        const pixelOffset = convertToPixels(refTarget.current, currentOffset.x, currentOffset.y)
+        const targetX = containerRect.left + pixelOffset.x
+        const targetY = containerRect.top + pixelOffset.y
+        
+        // Get visible child element count excluding invisible elements
+        const childrenCount = InvisibleElementManager.getVisibleChildren(refTarget.current).length
         
         // Update children count
         setChildrenCount(prevCount => {
-          if (prevCount !== newChildrenCount) {
-            return newChildrenCount
+          if (prevCount !== childrenCount) {
+            return childrenCount
           }
           return prevCount
         })
@@ -119,7 +148,7 @@ export const useLocator = (
         processingRef.current = false
       }
     }, 0)
-  }, [stableOnDetect])
+  }, [stableOnDetect, convertToPixels])
   
   // Observer setup
   useEffect(() => {
