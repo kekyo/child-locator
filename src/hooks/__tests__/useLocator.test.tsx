@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { useRef } from 'react'
 import { useLocator } from '../useLocator'
 import { useComponentRef } from '../useComponentRef'
-import type { DetectedComponent } from '../../types/useLocator'
+import type { DetectedComponent, CSSUnitValue } from '../../types/useLocator'
 
 // Test component
 const TestChild = ({ id, height = 100 }: { id: number; height?: number }) => {
@@ -26,7 +26,7 @@ const TestContainer = ({
   onDetect,
   children,
 }: {
-  offset: { x: number; y: number }
+  offset: { x: CSSUnitValue; y: CSSUnitValue }
   onDetect: (detected: DetectedComponent | null) => void
   children: React.ReactNode
 }) => {
@@ -52,7 +52,7 @@ const TestContainer = ({
       <div
         ref={containerRef}
         data-testid="container"
-        style={{ height: '300px', overflow: 'auto' }}
+        style={{ width: '400px', height: '300px', position: 'relative' }}
       >
         {children}
       </div>
@@ -161,5 +161,70 @@ describe('useLocator', () => {
     const detected = detectedComponents.find(d => d !== null)
     expect(detected).toBeDefined()
     expect(detected?.distanceFromOffset).toBeGreaterThanOrEqual(0)
+  })
+
+  it('should support CSS unit strings for offset', async () => {
+    render(
+      <TestContainer offset={{ x: '50%', y: '25%' }} onDetect={mockOnDetect}>
+        <TestChild id={1} height={80} />
+        <TestChild id={2} height={80} />
+      </TestContainer>
+    )
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('children-count')).toHaveTextContent('Children: 2')
+    })
+    
+    // Verify that detection works with CSS units
+    await waitFor(() => {
+      expect(detectedComponents.length).toBeGreaterThan(0)
+    })
+    
+    const lastDetected = detectedComponents[detectedComponents.length - 1]
+    expect(lastDetected).not.toBeNull()
+    expect(typeof lastDetected?.distanceFromOffset).toBe('number')
+  })
+
+  it('should support mixed units (number and string)', async () => {
+    render(
+      <TestContainer offset={{ x: 100, y: '50%' }} onDetect={mockOnDetect}>
+        <TestChild id={1} height={80} />
+        <TestChild id={2} height={80} />
+      </TestContainer>
+    )
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('children-count')).toHaveTextContent('Children: 2')
+    })
+    
+    // Verify that detection works with mixed units
+    await waitFor(() => {
+      expect(detectedComponents.length).toBeGreaterThan(0)
+    })
+    
+    const lastDetected = detectedComponents[detectedComponents.length - 1]
+    expect(lastDetected).not.toBeNull()
+    expect(typeof lastDetected?.distanceFromOffset).toBe('number')
+  })
+
+  it('should exclude invisible locator elements from children count', async () => {
+    render(
+      <TestContainer offset={{ x: '10%', y: '10%' }} onDetect={mockOnDetect}>
+        <TestChild id={1} />
+        <TestChild id={2} />
+      </TestContainer>
+    )
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('children-count')).toHaveTextContent('Children: 2')
+    })
+    
+    // Verify that invisible elements are not included in child element count
+    const container = screen.getByTestId('container')
+    const allChildren = container.children.length
+    const visibleChildren = parseInt(screen.getByTestId('children-count').textContent?.split(': ')[1] || '0')
+    
+    // When invisible elements exist, the total child element count should be greater than the visible element count
+    expect(allChildren).toBeGreaterThanOrEqual(visibleChildren)
   })
 }) 

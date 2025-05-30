@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import type { OffsetCoordinates } from '../types/useLocator'
+import { InvisibleElementManager } from './invisibleElementManager'
 
 /**
  * WeakMap that manages associations between HTMLElement and React components
@@ -28,6 +29,30 @@ export const unregisterComponent = (element: HTMLElement): void => {
 }
 
 /**
+ * Convert CSS units to px values
+ */
+const convertToPixels = (
+  container: HTMLElement,
+  offset: OffsetCoordinates
+): { x: number; y: number } => {
+  // Return as-is if both are numbers
+  if (typeof offset.x === 'number' && typeof offset.y === 'number') {
+    return { x: offset.x, y: offset.y }
+  }
+
+  // For CSS units, use invisible element for conversion
+  const manager = new InvisibleElementManager()
+  manager.setContainer(container)
+  
+  try {
+    const position = manager.getPositionFromCSSUnits(offset.x, offset.y)
+    return position || { x: 0, y: 0 }
+  } finally {
+    manager.cleanup()
+  }
+}
+
+/**
  * Find the child element closest to the specified XY coordinates
  * @param container - Container element to search within
  * @param offset - Target offset coordinates for detection
@@ -38,17 +63,18 @@ export const findElementAtOffset = (
   offset: OffsetCoordinates
 ): HTMLElement | null => {
   const containerRect = container.getBoundingClientRect()
-  const targetX = containerRect.left + offset.x
-  const targetY = containerRect.top + offset.y
+  const pixelOffset = convertToPixels(container, offset)
+  const targetX = containerRect.left + pixelOffset.x
+  const targetY = containerRect.top + pixelOffset.y
   
   let closestElement: HTMLElement | null = null
   let closestDistance = Infinity
   
-  // Target only direct children of the container
-  const children = Array.from(container.children) as HTMLElement[]
+  // Exclude invisible elements and target only direct child elements
+  const children = InvisibleElementManager.getVisibleChildren(container)
   
   for (const child of children) {
-    const childRect = child.getBoundingClientRect()
+    const childRect = (child as HTMLElement).getBoundingClientRect()
     
     // Calculate element center coordinates
     const elementCenterX = childRect.left + childRect.width / 2
@@ -63,7 +89,7 @@ export const findElementAtOffset = (
     // Update if a closer element is found
     if (distance < closestDistance) {
       closestDistance = distance
-      closestElement = child
+      closestElement = child as HTMLElement
     }
   }
   
@@ -85,8 +111,9 @@ export const detectElementAtOffset = (
   targetCoordinates: { x: number; y: number }
 } => {
   const containerRect = container.getBoundingClientRect()
-  const targetX = containerRect.left + offset.x
-  const targetY = containerRect.top + offset.y
+  const pixelOffset = convertToPixels(container, offset)
+  const targetX = containerRect.left + pixelOffset.x
+  const targetY = containerRect.top + pixelOffset.y
   
   const element = findElementAtOffset(container, offset)
   
