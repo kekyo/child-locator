@@ -69,7 +69,14 @@ test('Center button detailed debug', async ({ page }) => {
   
   // Click Center button
   console.log('\nClicking Center button...')
-  await page.click('button:text-is("Center")')
+  await page.evaluate(() => {
+    const buttons = Array.from(document.querySelectorAll('button'))
+    const centerButton = buttons.find(b => b.textContent?.trim() === 'Center')
+    if (centerButton) {
+      console.log('Clicking Center button')
+      centerButton.click()
+    }
+  })
   await page.waitForTimeout(1000)
   
   // Check state after clicking

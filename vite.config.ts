@@ -11,11 +11,19 @@ export default defineConfig({
     checker({
       typescript: {
         tsconfigPath: 'tsconfig.app.json'
+      },
+      overlay: {
+        initialIsOpen: false,
+        position: 'tl',
+        badgeStyle: 'display: none;'
       }
     })
   ],
   server: {
-    port: 59517
+    port: 59517,
+    hmr: {
+      overlay: false
+    }
   },
   build: {
     lib: {

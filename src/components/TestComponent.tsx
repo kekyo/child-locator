@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect, useCallback } from 'react'
 import { useLocator } from '../hooks/useLocator'
 import { useComponentRef } from '../hooks/useComponentRef'
 import type { DetectedComponent, OffsetCoordinates, CSSUnitValue } from '../types/useLocator'
@@ -10,7 +10,7 @@ interface ChildItemProps {
 }
 
 const ChildItem: React.FC<ChildItemProps> = ({ id, content, gridPosition }) => {
-  const component = <ChildItem id={id} content={content} gridPosition={gridPosition} />
+  const component = React.createElement('div', { 'data-component-id': id, 'data-content': content })
   const [, setRef] = useComponentRef<HTMLDivElement>(component)
   
   return (
@@ -149,17 +149,17 @@ export const TestComponent: React.FC = () => {
   }
 
   // Update offset from text inputs
-  const updateOffsetFromInputs = () => {
+  const updateOffsetFromInputs = useCallback(() => {
     // Preserve CSS unit strings as-is
     const xValue: CSSUnitValue = xInput.endsWith('px') || xInput.endsWith('%') || xInput.endsWith('vw') || xInput.endsWith('vh') || xInput.endsWith('rem') || xInput.endsWith('em') ? xInput : parseFloat(xInput) || 0
     const yValue: CSSUnitValue = yInput.endsWith('px') || yInput.endsWith('%') || yInput.endsWith('vw') || yInput.endsWith('vh') || yInput.endsWith('rem') || yInput.endsWith('em') ? yInput : parseFloat(yInput) || 0
     setOffset({ x: xValue, y: yValue })
-  }
+  }, [xInput, yInput])
 
   // Update offset when input values change
   useEffect(() => {
     updateOffsetFromInputs()
-  }, [xInput, yInput])
+  }, [updateOffsetFromInputs])
 
   // Monitor window size
   useEffect(() => {
@@ -202,6 +202,13 @@ export const TestComponent: React.FC = () => {
   useEffect(() => {
     console.log(`Offset changed: (${offset.x}, ${offset.y})`)
   }, [offset])
+
+  // Ensure container is visible when component mounts
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'center' })
+    }
+  }, [])
   
   const { childrenCount, isEnabled } = useLocator(containerRef, {
     offset,
@@ -294,7 +301,9 @@ export const TestComponent: React.FC = () => {
                   color: xInput === preset.x && yInput === preset.y ? 'white' : 'black',
                   border: '1px solid #ccc',
                   borderRadius: '4px',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  position: 'relative',
+                  zIndex: 1000
                 }}
               >
                 {preset.name}

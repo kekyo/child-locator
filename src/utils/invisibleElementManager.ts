@@ -51,7 +51,7 @@ export class InvisibleElementManager {
     this.container.appendChild(this.invisibleElement)
     
     // Force layout calculation
-    this.container.offsetWidth
+    void this.container.offsetWidth
     
     // Get position relative to container using offsetLeft and offsetTop
     const rect = this.invisibleElement.getBoundingClientRect()
@@ -88,4 +88,6 @@ export class InvisibleElementManager {
       !InvisibleElementManager.isLocatorInvisibleElement(child)
     )
   }
-} 
+}
+
+ 

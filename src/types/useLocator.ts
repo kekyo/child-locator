@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react'
+import type { ReactElement, RefObject } from 'react'
 
 /**
  * CSS unit value type that supports both numeric (px) and string (%, vw, vh, rem, em) values
@@ -40,6 +40,8 @@ export interface UseLocatorOptions {
   onDetect: (detected: DetectedComponent) => void
   /** Enable/disable monitoring */
   enabled?: boolean
+  /** Optional scroll container reference for scroll-container-relative coordinate calculation */
+  scrollContainerRef?: RefObject<HTMLElement | null>
 }
 
 /**

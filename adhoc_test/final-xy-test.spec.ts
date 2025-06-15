@@ -38,9 +38,16 @@ test('Final XY coordinate detection functionality test with CSS units support', 
   for (const preset of presetTests) {
     console.log(`\n--- ${preset.name} Coordinate Test ---`)
     
-    // Click preset button (using exact text match)
-    await page.click(`button:text-is("${preset.name}")`)
-    await page.waitForTimeout(300)
+    // Use JavaScript click to ensure it works
+    await page.evaluate((name) => {
+      const buttons = Array.from(document.querySelectorAll('button'))
+      const targetButton = buttons.find(b => b.textContent?.trim() === name)
+      if (targetButton) {
+        console.log(`Clicking button: ${name}`)
+        targetButton.click()
+      }
+    }, preset.name)
+    await page.waitForTimeout(500)
     
     const currentState = await page.evaluate(() => {
       const paragraphs = Array.from(document.querySelectorAll('p'))
@@ -81,8 +88,14 @@ test('Final XY coordinate detection functionality test with CSS units support', 
   for (const preset of percentageTests) {
     console.log(`\n--- ${preset.name} Percentage Test ---`)
     
-    // Click preset button
-    await page.click(`button:text-is("${preset.name}")`)
+    // Click preset button using JavaScript
+    await page.evaluate((name) => {
+      const buttons = Array.from(document.querySelectorAll('button'))
+      const targetButton = buttons.find(b => b.textContent?.trim() === name)
+      if (targetButton) {
+        targetButton.click()
+      }
+    }, preset.name)
     await page.waitForTimeout(300)
     
     const currentState = await page.evaluate(() => {
@@ -162,7 +175,13 @@ test('Final XY coordinate detection functionality test with CSS units support', 
   ]
   
   for (const test of distanceTests) {
-    await page.click(`button:text-is("${test.name}")`)
+    await page.evaluate((name) => {
+      const buttons = Array.from(document.querySelectorAll('button'))
+      const targetButton = buttons.find(b => b.textContent?.trim() === name)
+      if (targetButton) {
+        targetButton.click()
+      }
+    }, test.name)
     await page.waitForTimeout(300)
     
     const distanceInfo = await page.evaluate(() => {

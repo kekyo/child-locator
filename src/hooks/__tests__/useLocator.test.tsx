@@ -1,6 +1,6 @@
 /// <reference types="vitest/globals" />
+import React, { useRef } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
-import { useRef } from 'react'
 import { useLocator } from '../useLocator'
 import { useComponentRef } from '../useComponentRef'
 import type { DetectedComponent, CSSUnitValue } from '../../types/useLocator'
@@ -14,7 +14,13 @@ const TestChild = ({ id, height = 100 }: { id: number; height?: number }) => {
     <div
       ref={setRef}
       data-testid={`child-${id}`}
-      style={{ height: `${height}px`, margin: '10px 0' }}
+      style={{
+        width: '100px',
+        height: `${height}px`,
+        backgroundColor: '#f0f0f0',
+        border: '1px solid #ccc',
+        margin: '5px',
+      }}
     >
       Child {id}
     </div>
@@ -55,6 +61,60 @@ const TestContainer = ({
         style={{ width: '400px', height: '300px', position: 'relative' }}
       >
         {children}
+      </div>
+    </div>
+  )
+}
+
+const TestScrollContainer = ({
+  offset,
+  onDetect,
+  children,
+}: {
+  offset: { x: CSSUnitValue; y: CSSUnitValue }
+  onDetect: (detected: DetectedComponent | null) => void
+  children: React.ReactNode
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  
+  const { detected, childrenCount, isEnabled } = useLocator(containerRef, {
+    offset,
+    onDetect,
+    enabled: true,
+    scrollContainerRef: scrollContainerRef,
+  })
+  
+  return (
+    <div>
+      <div data-testid="detected-info">
+        Detected: {detected ? 'yes' : 'no'}
+      </div>
+      <div data-testid="children-count">
+        Children: {childrenCount}
+      </div>
+      <div data-testid="enabled-status">
+        Enabled: {isEnabled ? 'yes' : 'no'}
+      </div>
+      <div data-testid="header" style={{ height: '50px', backgroundColor: '#ccc', flexShrink: 0 }}>
+        Header (Fixed)
+      </div>
+      <div
+        ref={scrollContainerRef}
+        data-testid="scroll-container"
+        style={{
+          height: '300px',
+          overflow: 'auto',
+          flexShrink: 0,
+        }}
+      >
+        <div
+          ref={containerRef}
+          data-testid="container"
+          style={{ width: '400px', height: '600px', position: 'relative' }}
+        >
+          {children}
+        </div>
       </div>
     </div>
   )
@@ -226,5 +286,38 @@ describe('useLocator', () => {
     
     // When invisible elements exist, the total child element count should be greater than the visible element count
     expect(allChildren).toBeGreaterThanOrEqual(visibleChildren)
+  })
+
+  it('should work with scroll container for scroll-relative coordinate calculation', async () => {
+    render(
+      <TestScrollContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
+        <TestChild id={1} height={80} />
+        <TestChild id={2} height={80} />
+        <TestChild id={3} height={80} />
+      </TestScrollContainer>
+    )
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('children-count')).toHaveTextContent('Children: 3')
+    })
+    
+    // Verify that detection works with scroll container
+    await waitFor(() => {
+      expect(detectedComponents.length).toBeGreaterThan(0)
+    })
+    
+    const lastDetected = detectedComponents[detectedComponents.length - 1]
+    expect(lastDetected).not.toBeNull()
+    expect(lastDetected?.element).toBeInstanceOf(HTMLElement)
+    
+    // Test scroll behavior
+    const scrollContainer = screen.getByTestId('scroll-container')
+    scrollContainer.scrollTop = 100
+    
+    // Allow time for scroll event handling
+    await new Promise(resolve => setTimeout(resolve, 200))
+    
+    // Detection should still work after scrolling
+    expect(detectedComponents.length).toBeGreaterThan(0)
   })
 }) 

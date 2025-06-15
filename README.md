@@ -7,13 +7,13 @@ A React Hook for detecting child components at specific XY coordinates within a 
 
 ## Features
 
-- **XY Coordinate Detection**: Precisely locate child components at specified coordinates
-- **CSS Unit Support**: Coordinate values support px (number), %, vw, vh, rem, em (string) units
-- **Real-time Monitoring**: Automatically detects changes in child elements using MutationObserver, ResizeObserver, and IntersectionObserver
-- **Distance Calculation**: Provides Euclidean distance from target coordinates to detected elements
-- **TypeScript Support**: Full TypeScript support with comprehensive type definitions
-- **React Component Mapping**: Maps HTML elements back to their React components using WeakMap
-- **Performance Optimized**: Efficient observer management with proper cleanup
+- XY Coordinate Detection: Precisely locate child components at specified coordinates
+- CSS Unit Support: Coordinate values support px (number), %, vw, vh, rem, em (string) units
+- Real-time Monitoring: Automatically detects changes in child elements using MutationObserver, ResizeObserver, and IntersectionObserver
+- Distance Calculation: Provides Euclidean distance from target coordinates to detected elements
+- TypeScript Support: Full TypeScript support with comprehensive type definitions
+- React Component Mapping: Maps HTML elements back to their React components using WeakMap
+- Performance Optimized: Efficient observer management with proper cleanup
 
 ## Installation
 
@@ -85,9 +85,10 @@ const { detected, childrenCount, isEnabled } = useLocator(refTarget, options)
 
 ```tsx
 interface UseLocatorOptions {
-  offset: OffsetCoordinates      // Target XY coordinates
-  onDetect: (detected: DetectedComponent) => void  // Detection callback
-  enabled?: boolean              // Enable/disable monitoring (default: true)
+  offset: OffsetCoordinates;      // Target XY coordinates
+  onDetect: (detected: DetectedComponent) => void;  // Detection callback
+  enabled?: boolean;              // Enable/disable monitoring (default: true)
+  scrollContainerRef?: RefObject<HTMLElement | null>; // Optional scroll container
 }
 ```
 
@@ -95,20 +96,20 @@ interface UseLocatorOptions {
 
 ```tsx
 interface OffsetCoordinates {
-  x: CSSUnitValue  // X coordinate - supports px (number), %, vw, vh, rem, em (string)
-  y: CSSUnitValue  // Y coordinate - supports px (number), %, vw, vh, rem, em (string)
+  x: CSSUnitValue;  // X coordinate - supports px (number), %, vw, vh, rem, em (string)
+  y: CSSUnitValue;  // Y coordinate - supports px (number), %, vw, vh, rem, em (string)
 }
 
-type CSSUnitValue = number | string
+type CSSUnitValue = number | string;
 ```
 
 #### Return Value
 
 ```tsx
 interface UseLocatorReturn {
-  detected: DetectedComponent | null  // Currently detected component
-  childrenCount: number              // Number of child elements
-  isEnabled: boolean                 // Whether monitoring is active
+  detected: DetectedComponent | null;  // Currently detected component
+  childrenCount: number;               // Number of child elements
+  isEnabled: boolean;                  // Whether monitoring is active
 }
 ```
 
@@ -116,10 +117,10 @@ interface UseLocatorReturn {
 
 ```tsx
 interface DetectedComponent {
-  element?: HTMLElement     // Detected HTML element (undefined if no children)
-  component?: ReactElement  // Associated React component
-  bounds?: DOMRect         // Element's bounding rectangle
-  distanceFromOffset: number // Euclidean distance from target coordinates
+  element?: HTMLElement;      // Detected HTML element (undefined if no children)
+  component?: ReactElement;   // Associated React component
+  bounds?: DOMRect;           // Element's bounding rectangle
+  distanceFromOffset: number; // Euclidean distance from target coordinates
 }
 ```
 
@@ -145,8 +146,8 @@ Registers a React component with its corresponding HTML element for reverse look
 
 ```tsx
 const CoordinateExamples: React.FC = () => {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [coordinateType, setCoordinateType] = useState<string>('percentage')
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [coordinateType, setCoordinateType] = useState<string>('percentage');
   
   // Different coordinate examples
   const coordinateExamples = {
@@ -154,7 +155,7 @@ const CoordinateExamples: React.FC = () => {
     viewport: { x: '10vw', y: '15vh' },
     relative: { x: '5rem', y: '3em' },
     pixels: { x: 200, y: 150 }
-  }
+  };
   
   const { detected } = useLocator(containerRef, {
     offset: coordinateExamples[coordinateType as keyof typeof coordinateExamples],
@@ -173,8 +174,7 @@ const CoordinateExamples: React.FC = () => {
           Coordinate Type:
           <select 
             value={coordinateType} 
-            onChange={(e) => setCoordinateType(e.target.value)}
-          >
+            onChange={(e) => setCoordinateType(e.target.value)}>
             <option value="percentage">Percentage (50%, 25%)</option>
             <option value="viewport">Viewport (10vw, 15vh)</option>
             <option value="relative">Relative (5rem, 3em)</option>
@@ -190,8 +190,7 @@ const CoordinateExamples: React.FC = () => {
           height: '400px',
           border: '2px solid #333',
           position: 'relative'
-        }}
-      >
+        }}>
         {/* Your child components here */}
       </div>
     </div>
@@ -203,8 +202,8 @@ const CoordinateExamples: React.FC = () => {
 
 ```tsx
 const GridComponent: React.FC = () => {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [targetCoords, setTargetCoords] = useState({ x: '25%', y: '50%' })
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [targetCoords, setTargetCoords] = useState({ x: '25%', y: '50%' });
   
   const { detected } = useLocator(containerRef, {
     offset: targetCoords,
@@ -225,16 +224,14 @@ const GridComponent: React.FC = () => {
             type="text" 
             value={targetCoords.x}
             placeholder="e.g., 50%, 200px, 10vw"
-            onChange={(e) => setTargetCoords(prev => ({ ...prev, x: e.target.value }))}
-          />
+            onChange={(e) => setTargetCoords(prev => ({ ...prev, x: e.target.value }))} />
         </label>
         <label>
           Y (CSS Unit): <input 
             type="text" 
             value={targetCoords.y}
             placeholder="e.g., 30%, 150px, 5vh"
-            onChange={(e) => setTargetCoords(prev => ({ ...prev, y: e.target.value }))}
-          />
+            onChange={(e) => setTargetCoords(prev => ({ ...prev, y: e.target.value }))} />
         </label>
       </div>
       
@@ -259,28 +256,17 @@ const GridComponent: React.FC = () => {
 
 ## Important Notes
 
-### Limitations
-
-- The child-locator can only detect direct child components of the component referenced by containerRef.
-  For example, grandchild components of nested descendant components cannot be detected.
-
-### Performance Considerations
-
-- The hook uses multiple observers (MutationObserver, ResizeObserver, IntersectionObserver) for comprehensive monitoring
-- Detection callbacks are debounced to prevent excessive calls
-- Observers are automatically cleaned up when the component unmounts or when disabled
-
 ### Coordinate System
 
-- **Flexible Units**: Supports multiple CSS unit types:
-  - **Pixels (number)**: Direct pixel values (e.g., `100`, `250`)
-  - **Percentages (string)**: Relative to container size (e.g., `'50%'`, `'25%'`)
-  - **Viewport units (string)**: Relative to viewport (e.g., `'10vw'`, `'15vh'`)
-  - **Font-relative units (string)**: `'rem'` (root) and `'em'` (element) units
-- **Container-relative**: Coordinates are relative to the container element's content area (excluding padding)
-- **Standard conventions**: Follows web coordinate system (0,0 at top-left)
-- **Automatic conversion**: CSS units are converted to pixels internally for precise detection
-- **Responsive design**: Percentage and viewport units automatically adapt to size changes
+- Flexible Units: Supports multiple CSS unit types:
+  - Pixels (number): Direct pixel values (e.g., `100`, `250`)
+  - Percentages (string): Relative to container size (e.g., `'50%'`, `'25%'`)
+  - Viewport units (string): Relative to viewport (e.g., `'10vw'`, `'15vh'`)
+  - Font-relative units (string): `'rem'` (root) and `'em'` (element) units
+- Container-relative: Coordinates are relative to the container element's content area (excluding padding)
+- Standard conventions: Follows web coordinate system (0,0 at top-left)
+- Automatic conversion: CSS units are converted to pixels internally for precise detection
+- Responsive design: Percentage and viewport units automatically adapt to size changes
 
 ### Component Registration
 
@@ -288,80 +274,42 @@ const GridComponent: React.FC = () => {
 - Components are stored using WeakMap for automatic garbage collection
 - Registration is optional; the hook works with HTML elements alone
 
-### Browser Compatibility
+### Limitations
 
-- Requires modern browsers with support for:
-  - MutationObserver
-  - ResizeObserver
-  - IntersectionObserver
-  - WeakMap
+- Direct Children Only: The child-locator can only detect direct child components of the component referenced by containerRef.
+  For example, grandchild components of nested descendant components cannot be detected.
 
-### Memory Management
+- Viewport Coordinate Constraint: When target coordinates are outside the browser viewport, detection behavior may differ for overlapping elements:
+  - Within Viewport: Uses `document.elementFromPoint()` which respects CSS stacking context and z-index properly
+  - Outside Viewport: Falls back to bounds-based detection using `getBoundingClientRect()`, which may return different results for overlapping elements due to different selection criteria (distance-based vs stacking context-based)
+  
+  This means that if you have overlapping child elements and specify coordinates outside the current viewport, the detected element might differ from what would be detected if the same coordinates were within the viewport.
 
-- All observers are automatically disconnected on cleanup
-- WeakMap ensures no memory leaks from component registration
-- Refs are properly cleaned up when components unmount
+### Performance Considerations
 
-## Development
+- The hook uses multiple observers (MutationObserver, ResizeObserver, IntersectionObserver) for comprehensive monitoring
+- Detection callbacks are debounced to prevent excessive calls
+- Observers are automatically cleaned up when the component unmounts or when disabled
 
-```bash
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Run tests
-npm test
-
-# Run tests with UI
-npm run test:ui
-
-# Build for production
-npm run build
-
-# Run linting
-npm run lint
-```
-
-## Testing
-
-The project includes comprehensive test suites:
-
-- **Unit Tests**: vitest with @testing-library/react
-- **Integration Tests**: Playwright for end-to-end testing
-
-```bash
-# Run unit tests
-npm test
-
-# Run Playwright tests
-npx playwright test
-```
+----
 
 ## License
 
 MIT License - see LICENSE file for details.
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes with tests
-4. Ensure all tests pass
-5. Submit a pull request
-
 ## Changelog
 
-### 0.2.0
-- **CSS Unit Support**: Added support for multiple coordinate unit types (px, %, vw, vh, rem, em)
-- **Flexible Coordinate System**: Coordinates now accept both number (pixels) and string (CSS units) values
-- **Responsive Design**: Percentage and viewport units automatically adapt to container and viewport size changes
-- **Enhanced API**: Updated `OffsetCoordinates` interface to support `CSSUnitValue` type
-- **Improved Examples**: Added comprehensive CSS unit usage examples in documentation
-
-### 0.1.0
-- Initial release with XY coordinate detection
-- React component mapping support
-- Comprehensive observer-based monitoring
-- TypeScript support with full type definitions
+* 0.3.0
+  * Fixed detection for coordinates when using in overflowed container
+  * Improved locator when detecting point is on outside viewport
+* 0.2.0
+  * CSS Unit Support: Added support for multiple coordinate unit types (px, %, vw, vh, rem, em)
+  * Flexible Coordinate System: Coordinates now accept both number (pixels) and string (CSS units) values
+  * Responsive Design: Percentage and viewport units automatically adapt to container and viewport size changes
+  * Enhanced API: Updated `OffsetCoordinates` interface to support `CSSUnitValue` type
+  * Improved Examples: Added comprehensive CSS unit usage examples in documentation
+* 0.1.0:
+  * Initial release with XY coordinate detection
+  * React component mapping support
+  * Comprehensive observer-based monitoring
+  * TypeScript support with full type definitions
