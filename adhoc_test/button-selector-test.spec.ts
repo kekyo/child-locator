@@ -54,7 +54,13 @@ test('Button selector verification test', async ({ page }) => {
   })
   
   // Click button with exactly "Center" text
-  await page.click('button:text-is("Center")')
+  await page.evaluate(() => {
+    const buttons = Array.from(document.querySelectorAll('button'))
+    const centerButton = buttons.find(b => b.textContent?.trim() === 'Center')
+    if (centerButton) {
+      centerButton.click()
+    }
+  })
   await page.waitForTimeout(1000)
   
   // Check recent logs

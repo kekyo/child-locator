@@ -10,7 +10,7 @@ interface ChildItemProps {
 }
 
 const ChildItem: React.FC<ChildItemProps> = ({ id, content, gridPosition }) => {
-  const component = <ChildItem id={id} content={content} gridPosition={gridPosition} />
+  const component = React.createElement('div', { 'data-component-id': id, 'data-content': content })
   const [, setRef] = useComponentRef<HTMLDivElement>(component)
   
   return (
@@ -202,6 +202,13 @@ export const TestComponent: React.FC = () => {
   useEffect(() => {
     console.log(`Offset changed: (${offset.x}, ${offset.y})`)
   }, [offset])
+
+  // Ensure container is visible when component mounts
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'center' })
+    }
+  }, [])
   
   const { childrenCount, isEnabled } = useLocator(containerRef, {
     offset,
@@ -294,7 +301,9 @@ export const TestComponent: React.FC = () => {
                   color: xInput === preset.x && yInput === preset.y ? 'white' : 'black',
                   border: '1px solid #ccc',
                   borderRadius: '4px',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  position: 'relative',
+                  zIndex: 1000
                 }}
               >
                 {preset.name}

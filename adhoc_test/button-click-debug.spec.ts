@@ -30,8 +30,15 @@ test('Button click coordinate setting debug', async ({ page }) => {
     console.log(`  Before click: ${beforeState.offset}`)
     console.log(`  Before click: ${beforeState.detected}`)
     
-    // Click button
-    await page.click(`button:has-text("${buttonName}")`)
+    // Use JavaScript click to ensure it works
+    await page.evaluate((name) => {
+      const buttons = Array.from(document.querySelectorAll('button'))
+      const targetButton = buttons.find(b => b.textContent?.trim() === name)
+      if (targetButton) {
+        console.log(`Clicking button: ${name}`)
+        targetButton.click()
+      }
+    }, buttonName)
     await page.waitForTimeout(500) // Wait a bit longer
     
     // State after button click

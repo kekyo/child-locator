@@ -41,7 +41,7 @@ export interface UseLocatorOptions {
   /** Enable/disable monitoring */
   enabled?: boolean
   /** Optional scroll container reference for scroll-container-relative coordinate calculation */
-  scrollContainer?: RefObject<HTMLElement | null>
+  scrollContainerRef?: RefObject<HTMLElement | null>
 }
 
 /**

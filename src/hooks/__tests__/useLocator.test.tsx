@@ -1,6 +1,6 @@
 /// <reference types="vitest/globals" />
+import React, { useRef } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
-import { useRef } from 'react'
 import { useLocator } from '../useLocator'
 import { useComponentRef } from '../useComponentRef'
 import type { DetectedComponent, CSSUnitValue } from '../../types/useLocator'
@@ -14,7 +14,13 @@ const TestChild = ({ id, height = 100 }: { id: number; height?: number }) => {
     <div
       ref={setRef}
       data-testid={`child-${id}`}
-      style={{ height: `${height}px`, margin: '10px 0' }}
+      style={{
+        width: '100px',
+        height: `${height}px`,
+        backgroundColor: '#f0f0f0',
+        border: '1px solid #ccc',
+        margin: '5px',
+      }}
     >
       Child {id}
     </div>
@@ -76,7 +82,7 @@ const TestScrollContainer = ({
     offset,
     onDetect,
     enabled: true,
-    scrollContainer: scrollContainerRef,
+    scrollContainerRef: scrollContainerRef,
   })
   
   return (

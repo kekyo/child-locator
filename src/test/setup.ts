@@ -43,6 +43,16 @@ Element.prototype.getBoundingClientRect = vi.fn((): DOMRect => ({
   toJSON: () => ({})
 }))
 
+// Mock document.elementFromPoint
+document.elementFromPoint = vi.fn((): Element | null => {
+  // Return the first child element found in the document for testing
+  const container = document.querySelector('[data-testid="container"]')
+  if (container && container.children.length > 0) {
+    return container.children[0]
+  }
+  return null
+})
+
 // Cleanup after each test case
 afterEach(() => {
   cleanup()

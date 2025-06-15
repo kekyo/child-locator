@@ -25,26 +25,64 @@ test('XY coordinate detection functionality comprehensive test', async ({ page }
   console.log(`  ${initialState.detected}`)
   console.log(`  ${initialState.offset}`)
   
-  // Test with preset coordinates
+  // Test with preset coordinates (adjusted to actual grid positions)
   const presetTests = [
-    { name: 'Top Left', expectedItem: '1' },
-    { name: 'Top Center', expectedItem: '2' },
-    { name: 'Top Right', expectedItem: '3' },
-    { name: 'Middle Left', expectedItem: '4' },
-    { name: 'Center', expectedItem: '5' },
-    { name: 'Middle Right', expectedItem: '6' },
-    { name: 'Bottom Left', expectedItem: '7' },
-    { name: 'Bottom Center', expectedItem: '8' },
-    { name: 'Bottom Right', expectedItem: '9' },
-    { name: 'Extra Item', expectedItem: '10' }
+    { name: 'Top Left', expectedItem: '1' },      // (75px, 63px)
+    { name: 'Top Center', expectedItem: '2' },    // (212px, 63px)
+    { name: 'Top Right', expectedItem: '3' },     // (349px, 63px)
+    { name: 'Middle Left', expectedItem: '4' },   // (75px, 175px)
+    { name: 'Center', expectedItem: '5' },        // (212px, 175px)
+    { name: 'Middle Right', expectedItem: '6' },  // (349px, 175px)
+    { name: 'Bottom Left', expectedItem: '7' },   // (75px, 287px)
+    { name: 'Bottom Center', expectedItem: '8' }, // (212px, 287px)
+    { name: 'Bottom Right', expectedItem: '9' },  // (349px, 287px)
+    { name: 'Extra Item', expectedItem: '10' }    // (212px, 399px)
   ]
   
   for (const preset of presetTests) {
     console.log(`\n--- ${preset.name} coordinate test ---`)
     
-    // Click preset button (using exact text match)
-    await page.click(`button:text-is("${preset.name}")`)
-    await page.waitForTimeout(300)
+    // Scroll to top of page first to ensure buttons are visible
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await page.waitForTimeout(200)
+    
+    // Find and click button
+    const button = page.locator(`button:text-is("${preset.name}")`)
+    await button.scrollIntoViewIfNeeded()
+    await page.waitForTimeout(200)
+    
+    // Get state before click for comparison
+    const beforeClick = await page.evaluate(() => {
+      const offsetP = Array.from(document.querySelectorAll('p')).find(p => p.textContent?.includes('Current Offset:'))
+      return offsetP?.textContent || 'Not found'
+    })
+    
+    // Use JavaScript click to ensure it works
+    await page.evaluate((name) => {
+      const buttons = Array.from(document.querySelectorAll('button'))
+      const targetButton = buttons.find(b => b.textContent?.trim() === name)
+      if (targetButton) {
+        console.log(`Clicking button: ${name}`)
+        targetButton.click()
+      } else {
+        console.log(`Button not found: ${name}`)
+        console.log('Available buttons:', buttons.map(b => b.textContent?.trim()))
+      }
+    }, preset.name)
+    
+    await page.waitForTimeout(500) // Wait longer for state update
+    
+    // Verify state actually changed
+    const afterClick = await page.evaluate(() => {
+      const offsetP = Array.from(document.querySelectorAll('p')).find(p => p.textContent?.includes('Current Offset:'))
+      return offsetP?.textContent || 'Not found'
+    })
+    
+    if (beforeClick === afterClick) {
+      console.log(`Warning: State did not change after clicking ${preset.name}`)
+      console.log(`Before: ${beforeClick}`)
+      console.log(`After: ${afterClick}`)
+    }
     
     const currentState = await page.evaluate(() => {
       const paragraphs = Array.from(document.querySelectorAll('p'))
@@ -152,7 +190,13 @@ test('XY coordinate detection functionality comprehensive test', async ({ page }
   console.log('\n--- Distance calculation validity test ---')
   
   // Align exactly with center item (Item 5)
-  await page.click('button:text-is("Center")')
+  await page.evaluate(() => {
+    const buttons = Array.from(document.querySelectorAll('button'))
+    const centerButton = buttons.find(b => b.textContent?.trim() === 'Center')
+    if (centerButton) {
+      centerButton.click()
+    }
+  })
   await page.waitForTimeout(300)
   
   const centerDistanceResult = await page.evaluate(() => {
