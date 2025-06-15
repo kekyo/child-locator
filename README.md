@@ -7,13 +7,13 @@ A React Hook for detecting child components at specific XY coordinates within a 
 
 ## Features
 
-- **XY Coordinate Detection**: Precisely locate child components at specified coordinates
-- **CSS Unit Support**: Coordinate values support px (number), %, vw, vh, rem, em (string) units
-- **Real-time Monitoring**: Automatically detects changes in child elements using MutationObserver, ResizeObserver, and IntersectionObserver
-- **Distance Calculation**: Provides Euclidean distance from target coordinates to detected elements
-- **TypeScript Support**: Full TypeScript support with comprehensive type definitions
-- **React Component Mapping**: Maps HTML elements back to their React components using WeakMap
-- **Performance Optimized**: Efficient observer management with proper cleanup
+- XY Coordinate Detection: Precisely locate child components at specified coordinates
+- CSS Unit Support: Coordinate values support px (number), %, vw, vh, rem, em (string) units
+- Real-time Monitoring: Automatically detects changes in child elements using MutationObserver, ResizeObserver, and IntersectionObserver
+- Distance Calculation: Provides Euclidean distance from target coordinates to detected elements
+- TypeScript Support: Full TypeScript support with comprehensive type definitions
+- React Component Mapping: Maps HTML elements back to their React components using WeakMap
+- Performance Optimized: Efficient observer management with proper cleanup
 
 ## Installation
 
@@ -272,15 +272,15 @@ const GridComponent: React.FC = () => {
 
 ### Coordinate System
 
-- **Flexible Units**: Supports multiple CSS unit types:
-  - **Pixels (number)**: Direct pixel values (e.g., `100`, `250`)
-  - **Percentages (string)**: Relative to container size (e.g., `'50%'`, `'25%'`)
-  - **Viewport units (string)**: Relative to viewport (e.g., `'10vw'`, `'15vh'`)
-  - **Font-relative units (string)**: `'rem'` (root) and `'em'` (element) units
-- **Container-relative**: Coordinates are relative to the container element's content area (excluding padding)
-- **Standard conventions**: Follows web coordinate system (0,0 at top-left)
-- **Automatic conversion**: CSS units are converted to pixels internally for precise detection
-- **Responsive design**: Percentage and viewport units automatically adapt to size changes
+- Flexible Units: Supports multiple CSS unit types:
+  - Pixels (number): Direct pixel values (e.g., `100`, `250`)
+  - Percentages (string): Relative to container size (e.g., `'50%'`, `'25%'`)
+  - Viewport units (string): Relative to viewport (e.g., `'10vw'`, `'15vh'`)
+  - Font-relative units (string): `'rem'` (root) and `'em'` (element) units
+- Container-relative: Coordinates are relative to the container element's content area (excluding padding)
+- Standard conventions: Follows web coordinate system (0,0 at top-left)
+- Automatic conversion: CSS units are converted to pixels internally for precise detection
+- Responsive design: Percentage and viewport units automatically adapt to size changes
 
 ### Component Registration
 
@@ -288,77 +288,20 @@ const GridComponent: React.FC = () => {
 - Components are stored using WeakMap for automatic garbage collection
 - Registration is optional; the hook works with HTML elements alone
 
-### Browser Compatibility
-
-- Requires modern browsers with support for:
-  - MutationObserver
-  - ResizeObserver
-  - IntersectionObserver
-  - WeakMap
-
-### Memory Management
-
-- All observers are automatically disconnected on cleanup
-- WeakMap ensures no memory leaks from component registration
-- Refs are properly cleaned up when components unmount
-
-## Development
-
-```bash
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Run tests
-npm test
-
-# Run tests with UI
-npm run test:ui
-
-# Build for production
-npm run build
-
-# Run linting
-npm run lint
-```
-
-## Testing
-
-The project includes comprehensive test suites:
-
-- **Unit Tests**: vitest with @testing-library/react
-- **Integration Tests**: Playwright for end-to-end testing
-
-```bash
-# Run unit tests
-npm test
-
-# Run Playwright tests
-npx playwright test
-```
+----
 
 ## License
 
 MIT License - see LICENSE file for details.
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes with tests
-4. Ensure all tests pass
-5. Submit a pull request
-
 ## Changelog
 
 ### 0.2.0
-- **CSS Unit Support**: Added support for multiple coordinate unit types (px, %, vw, vh, rem, em)
-- **Flexible Coordinate System**: Coordinates now accept both number (pixels) and string (CSS units) values
-- **Responsive Design**: Percentage and viewport units automatically adapt to container and viewport size changes
-- **Enhanced API**: Updated `OffsetCoordinates` interface to support `CSSUnitValue` type
-- **Improved Examples**: Added comprehensive CSS unit usage examples in documentation
+- CSS Unit Support: Added support for multiple coordinate unit types (px, %, vw, vh, rem, em)
+- Flexible Coordinate System: Coordinates now accept both number (pixels) and string (CSS units) values
+- Responsive Design: Percentage and viewport units automatically adapt to container and viewport size changes
+- Enhanced API: Updated `OffsetCoordinates` interface to support `CSSUnitValue` type
+- Improved Examples: Added comprehensive CSS unit usage examples in documentation
 
 ### 0.1.0
 - Initial release with XY coordinate detection

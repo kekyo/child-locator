@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Child Locator - Boundary Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            height: 80px;
+            background-color: #4CAF50;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .scroll-container {
+            flex: 1;
+            overflow: auto;
+            background-color: #f9f9f9;
+            position: relative;
+        }
+        
+        .content-container {
+            padding: 20px;
+            min-height: 1000px;
+            position: relative;
+        }
+        
+        .child-item {
+            width: 200px;
+            height: 120px;
+            margin: 10px;
+            background-color: #e0e0e0;
+            border: 2px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            position: absolute;
+        }
+        
+        .child-item:nth-child(1) { top: 20px; left: 20px; }
+        .child-item:nth-child(2) { top: 20px; left: 250px; }
+        .child-item:nth-child(3) { top: 20px; left: 480px; }
+        .child-item:nth-child(4) { top: 160px; left: 20px; }
+        .child-item:nth-child(5) { top: 160px; left: 250px; }
+        .child-item:nth-child(6) { top: 160px; left: 480px; }
+        
+        .target-indicator {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            pointer-events: none;
+        }
+        
+        .info-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
+            max-width: 250px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header" data-testid="header">
+        Fixed Header (flexShrink: 0)
+    </div>
+    
+    <div class="scroll-container" data-testid="scroll-container">
+        <div class="content-container" data-testid="content-container">
+            <div class="child-item" data-testid="child-1">Child Element 1</div>
+            <div class="child-item" data-testid="child-2">Child Element 2</div>
+            <div class="child-item" data-testid="child-3">Child Element 3</div>
+            <div class="child-item" data-testid="child-4">Child Element 4</div>
+            <div class="child-item" data-testid="child-5">Child Element 5</div>
+            <div class="child-item" data-testid="child-6">Child Element 6</div>
+            
+            <div class="target-indicator" data-testid="target-indicator" style="left: 100px; top: 100px;"></div>
+        </div>
+    </div>
+    
+    <div class="info-panel" data-testid="info-panel">
+        <div>Detection Result: <span data-testid="detected-element">None</span></div>
+        <div>Coordinates: <span data-testid="current-coordinates">(100, 100)</span></div>
+        <div>Distance: <span data-testid="distance">-</span></div>
+        <div>Children Count: <span data-testid="children-count">0</span></div>
+    </div>
+
+    <script type="module">
+        import { useLocator } from './dist/child-locator.es.js';
+        
+        // Mock React hooks for standalone HTML
+        const mockUseRef = (initialValue) => ({ current: initialValue });
+        const mockUseState = (initialValue) => {
+            let value = initialValue;
+            const setValue = (newValue) => {
+                if (typeof newValue === 'function') {
+                    value = newValue(value);
+                } else {
+                    value = newValue;
+                }
+                updateUI();
+            };
+            return [value, setValue];
+        };
+        const mockUseCallback = (fn) => fn;
+        const mockUseEffect = (fn, deps) => fn();
+        
+        // Mock React
+        window.React = {
+            useRef: mockUseRef,
+            useState: mockUseState,
+            useCallback: mockUseCallback,
+            useEffect: mockUseEffect
+        };
+        
+        // Initialize locator
+        const contentContainer = document.querySelector('[data-testid="content-container"]');
+        const scrollContainer = document.querySelector('[data-testid="scroll-container"]');
+        const targetIndicator = document.querySelector('[data-testid="target-indicator"]');
+        
+        let currentOffset = { x: 100, y: 100 };
+        let detectedElement = null;
+        let childrenCount = 0;
+        let distance = 0;
+        
+        // Simple locator implementation for testing
+        function detectElementAtPosition(x, y) {
+            const children = Array.from(contentContainer.children).filter(child => 
+                child.classList.contains('child-item')
+            );
+            
+            childrenCount = children.length;
+            
+            const scrollContainerRect = scrollContainer.getBoundingClientRect();
+            const scrollLeft = scrollContainer.scrollLeft;
+            const scrollTop = scrollContainer.scrollTop;
+            
+            // Calculate target coordinates relative to scroll container content
+            const targetX = scrollContainerRect.left + x - scrollLeft;
+            const targetY = scrollContainerRect.top + y - scrollTop;
+            
+            let closestElement = null;
+            let closestDistance = Infinity;
+            
+            children.forEach(child => {
+                const rect = child.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                const dist = Math.sqrt(
+                    Math.pow(centerX - targetX, 2) + 
+                    Math.pow(centerY - targetY, 2)
+                );
+                
+                if (dist < closestDistance) {
+                    closestDistance = dist;
+                    closestElement = child;
+                }
+            });
+            
+            detectedElement = closestElement;
+            distance = closestDistance;
+            updateUI();
+        }
+        
+        function updateUI() {
+            document.querySelector('[data-testid="detected-element"]').textContent = 
+                detectedElement ? detectedElement.textContent : 'None';
+            document.querySelector('[data-testid="current-coordinates"]').textContent = 
+                `(${currentOffset.x}, ${currentOffset.y})`;
+            document.querySelector('[data-testid="distance"]').textContent = 
+                distance ? distance.toFixed(1) + 'px' : '-';
+            document.querySelector('[data-testid="children-count"]').textContent = childrenCount;
+        }
+        
+        function setTargetPosition(x, y) {
+            currentOffset = { x, y };
+            targetIndicator.style.left = x + 'px';
+            targetIndicator.style.top = y + 'px';
+            detectElementAtPosition(x, y);
+        }
+        
+        // Expose functions for testing
+        window.boundaryTest = {
+            setTargetPosition,
+            getDetectedElement: () => detectedElement,
+            getCurrentCoordinates: () => currentOffset,
+            getDistance: () => distance,
+            getChildrenCount: () => childrenCount,
+            getElementBounds: (selector) => {
+                const element = document.querySelector(selector);
+                return element ? element.getBoundingClientRect() : null;
+            }
+        };
+        
+        // Initial detection
+        detectElementAtPosition(100, 100);
+        
+        // Add scroll event listener
+        scrollContainer.addEventListener('scroll', () => {
+            detectElementAtPosition(currentOffset.x, currentOffset.y);
+        });
+    </script>
+</body>
+</html> 

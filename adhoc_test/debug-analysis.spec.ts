@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 test('useLocator continuous log output problem detailed analysis', async ({ page }) => {
   // Log counter
   let logCount = 0
-  let logs: Array<{ time: number; message: string; caller: string }> = []
+  const _logs: Array<{ time: number; message: string; caller: string }> = []
   
   // Monitor console logs in detail
   page.on('console', (msg) => {
@@ -14,7 +14,7 @@ test('useLocator continuous log output problem detailed analysis', async ({ page
       // Try to get stack trace
       const location = msg.location()
       
-      logs.push({
+      _logs.push({
         time: now,
         message: msg.text(),
         caller: `${location.url}:${location.lineNumber}:${location.columnNumber}`
@@ -30,18 +30,18 @@ test('useLocator continuous log output problem detailed analysis', async ({ page
   console.log(`\n=== Detailed Log Analysis Results ===`)
   console.log(`Total log count: ${logCount}`)
   
-  if (logs.length > 0) {
+  if (_logs.length > 0) {
     // Details of first 10 logs
     console.log(`\n--- First 10 Logs Details ---`)
-    logs.slice(0, 10).forEach((log, index) => {
+    _logs.slice(0, 10).forEach((log, index) => {
       console.log(`${index + 1}. Time: ${log.time}, Source: ${log.caller}`)
     })
     
     // Log interval analysis
     console.log(`\n--- Log Interval Analysis ---`)
     const intervals: number[] = []
-    for (let i = 1; i < Math.min(logs.length, 100); i++) {
-      intervals.push(logs[i].time - logs[i-1].time)
+    for (let i = 1; i < Math.min(_logs.length, 100); i++) {
+      intervals.push(_logs[i].time - _logs[i-1].time)
     }
     
     if (intervals.length > 0) {
@@ -60,12 +60,12 @@ test('useLocator continuous log output problem detailed analysis', async ({ page
     
     // Duplicate logs at same time
     const timeGroups = new Map<number, number>()
-    logs.forEach(log => {
+    _logs.forEach(log => {
       const count = timeGroups.get(log.time) || 0
       timeGroups.set(log.time, count + 1)
     })
     
-    const duplicatedTimes = Array.from(timeGroups.entries()).filter(([_, count]) => count > 1)
+    const duplicatedTimes = Array.from(timeGroups.entries()).filter(([, count]) => count > 1)
     console.log(`\n--- Duplicate Logs at Same Time ---`)
     console.log(`Number of duplicate times: ${duplicatedTimes.length}`)
     if (duplicatedTimes.length > 0) {

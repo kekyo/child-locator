@@ -12,7 +12,7 @@ export const useLocator = (
   refTarget: RefObject<HTMLElement | null>,
   options: UseLocatorOptions
 ): UseLocatorReturn => {
-  const { offset, onDetect, enabled = true } = options
+  const { offset, onDetect, enabled = true, scrollContainer } = options
   
   const [detected, setDetected] = useState<DetectedComponent | null>(null)
   const [childrenCount, setChildrenCount] = useState(0)
@@ -31,8 +31,8 @@ export const useLocator = (
   const processingRef = useRef(false)
   
   // Ref to reference current values (to avoid circular dependencies)
-  const currentValuesRef = useRef({ offset, enabled, onDetect })
-  currentValuesRef.current = { offset, enabled, onDetect }
+  const currentValuesRef = useRef({ offset, enabled, onDetect, scrollContainer })
+  currentValuesRef.current = { offset, enabled, onDetect, scrollContainer }
   
   // Function to convert CSS units to px values
   const convertToPixels = useCallback((
@@ -77,8 +77,8 @@ export const useLocator = (
   }, [])
   
   // Stabilize detection process (avoid useCallback circular dependencies)
-  const detectComponent = useCallback((_source: string = 'unknown') => {
-    const { offset: currentOffset, enabled: currentEnabled } = currentValuesRef.current
+  const detectComponent = useCallback(() => {
+    const { offset: currentOffset, enabled: currentEnabled, scrollContainer: currentScrollContainer } = currentValuesRef.current
     
     if (processingRef.current || !refTarget.current || !currentEnabled) {
       return
@@ -94,13 +94,25 @@ export const useLocator = (
           return
         }
         
-        const targetElement = findElementAtOffset(refTarget.current, currentOffset)
-        const containerRect = refTarget.current.getBoundingClientRect()
+        const targetElement = findElementAtOffset(refTarget.current, currentOffset, currentScrollContainer)
         
-        // Convert CSS units to px values
-        const pixelOffset = convertToPixels(refTarget.current, currentOffset.x, currentOffset.y)
-        const targetX = containerRect.left + pixelOffset.x
-        const targetY = containerRect.top + pixelOffset.y
+        // Calculate target coordinates considering scroll container
+        let targetX: number, targetY: number
+        if (currentScrollContainer?.current) {
+          const containerRect = currentScrollContainer.current.getBoundingClientRect()
+          const scrollLeft = currentScrollContainer.current.scrollLeft
+          const scrollTop = currentScrollContainer.current.scrollTop
+          const pixelOffset = convertToPixels(refTarget.current, currentOffset.x, currentOffset.y)
+          
+          // Calculate coordinates relative to scroll container content
+          targetX = containerRect.left + pixelOffset.x - scrollLeft
+          targetY = containerRect.top + pixelOffset.y - scrollTop
+        } else {
+          const containerRect = refTarget.current.getBoundingClientRect()
+          const pixelOffset = convertToPixels(refTarget.current, currentOffset.x, currentOffset.y)
+          targetX = containerRect.left + pixelOffset.x
+          targetY = containerRect.top + pixelOffset.y
+        }
         
         // Get visible child element count excluding invisible elements
         const childrenCount = InvisibleElementManager.getVisibleChildren(refTarget.current).length
@@ -148,7 +160,7 @@ export const useLocator = (
         processingRef.current = false
       }
     }, 0)
-  }, [stableOnDetect, convertToPixels])
+  }, [stableOnDetect, convertToPixels, refTarget])
   
   // Observer setup
   useEffect(() => {
@@ -166,7 +178,7 @@ export const useLocator = (
     
     // MutationObserver
     observers.mutation = new MutationObserver(() => {
-      detectComponent('MutationObserver')
+      detectComponent()
     })
     observers.mutation.observe(targetElement, {
       childList: true,
@@ -180,7 +192,7 @@ export const useLocator = (
         const { width, height } = entry.contentRect
         
         if (width > 0 && height > 0) {
-          detectComponent('ResizeObserver')
+          detectComponent()
           break
         }
       }
@@ -189,7 +201,7 @@ export const useLocator = (
     
     // IntersectionObserver
     observers.intersection = new IntersectionObserver(() => {
-      detectComponent('IntersectionObserver')
+      detectComponent()
     }, {
       root: null,
       rootMargin: '0px',
@@ -198,7 +210,7 @@ export const useLocator = (
     observers.intersection.observe(targetElement)
     
     // Initial detection
-    detectComponent('initial')
+    detectComponent()
     
     // Cleanup
     return () => {
@@ -206,16 +218,16 @@ export const useLocator = (
       observers.resize?.disconnect()
       observers.intersection?.disconnect()
     }
-  }, [enabled, detectComponent])
+  }, [enabled, detectComponent, refTarget])
   
   // Handle offset changes
   useEffect(() => {
     if (enabled) {
       // Reset previous results
       lastResultRef.current = ''
-      detectComponent('offset change')
+      detectComponent()
     }
-  }, [offset.x, offset.y, enabled])
+  }, [offset.x, offset.y, enabled, detectComponent])
   
   // Monitor scroll events (both window and container)
   useEffect(() => {
@@ -229,26 +241,45 @@ export const useLocator = (
       }
       
       timeoutId = setTimeout(() => {
-        detectComponent('scroll')
+        detectComponent()
       }, 150)
     }
     
     const targetElement = refTarget.current
+    const currentScrollContainer = scrollContainer?.current
+    const scrollElement = currentScrollContainer || targetElement
     
-    // Window scroll events
-    window.addEventListener('scroll', handleScroll, { passive: true })
+    // Window scroll events (only if no scroll container is specified)
+    if (!currentScrollContainer) {
+      window.addEventListener('scroll', handleScroll, { passive: true })
+    }
     
-    // Container scroll events
-    targetElement.addEventListener('scroll', handleScroll, { passive: true })
+    // Container scroll events (use scrollContainer if specified, otherwise use target element)
+    scrollElement.addEventListener('scroll', handleScroll, { passive: true })
     
     return () => {
-      window.removeEventListener('scroll', handleScroll)
-      targetElement.removeEventListener('scroll', handleScroll)
+      if (!currentScrollContainer) {
+        window.removeEventListener('scroll', handleScroll)
+      }
+      scrollElement.removeEventListener('scroll', handleScroll)
       if (timeoutId) {
         clearTimeout(timeoutId)
       }
     }
-  }, [enabled])
+  }, [enabled, scrollContainer, detectComponent, refTarget])
+  
+  // Handle resize events
+  useEffect(() => {
+    const handleResize = () => {
+      detectComponent()
+    }
+    
+    window.addEventListener('resize', handleResize, { passive: true })
+    
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [detectComponent])
   
   return {
     detected,

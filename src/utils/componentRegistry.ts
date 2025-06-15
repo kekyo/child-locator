@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react'
+import type { ReactElement, RefObject } from 'react'
 import type { OffsetCoordinates } from '../types/useLocator'
 import { InvisibleElementManager } from './invisibleElementManager'
 
@@ -56,16 +56,30 @@ const convertToPixels = (
  * Find the child element closest to the specified XY coordinates
  * @param container - Container element to search within
  * @param offset - Target offset coordinates for detection
+ * @param scrollContainer - Optional scroll container for scroll-relative coordinate calculation
  * @returns Closest child element, or null if not found
  */
 export const findElementAtOffset = (
   container: HTMLElement,
-  offset: OffsetCoordinates
+  offset: OffsetCoordinates,
+  scrollContainer?: RefObject<HTMLElement | null>
 ): HTMLElement | null => {
-  const containerRect = container.getBoundingClientRect()
   const pixelOffset = convertToPixels(container, offset)
-  const targetX = containerRect.left + pixelOffset.x
-  const targetY = containerRect.top + pixelOffset.y
+  
+  let targetX: number, targetY: number
+  if (scrollContainer?.current) {
+    const scrollContainerRect = scrollContainer.current.getBoundingClientRect()
+    const scrollLeft = scrollContainer.current.scrollLeft
+    const scrollTop = scrollContainer.current.scrollTop
+    
+    // Calculate coordinates relative to scroll container content
+    targetX = scrollContainerRect.left + pixelOffset.x - scrollLeft
+    targetY = scrollContainerRect.top + pixelOffset.y - scrollTop
+  } else {
+    const containerRect = container.getBoundingClientRect()
+    targetX = containerRect.left + pixelOffset.x
+    targetY = containerRect.top + pixelOffset.y
+  }
   
   let closestElement: HTMLElement | null = null
   let closestDistance = Infinity
@@ -100,22 +114,36 @@ export const findElementAtOffset = (
  * Element detection at specified XY coordinates (with more detailed information)
  * @param container - Container element to search within
  * @param offset - Target offset coordinates for detection
+ * @param scrollContainer - Optional scroll container for scroll-relative coordinate calculation
  * @returns Detailed information about detection results
  */
 export const detectElementAtOffset = (
   container: HTMLElement,
-  offset: OffsetCoordinates
+  offset: OffsetCoordinates,
+  scrollContainer?: RefObject<HTMLElement | null>
 ): {
   element: HTMLElement | null
   distance: number
   targetCoordinates: { x: number; y: number }
 } => {
-  const containerRect = container.getBoundingClientRect()
   const pixelOffset = convertToPixels(container, offset)
-  const targetX = containerRect.left + pixelOffset.x
-  const targetY = containerRect.top + pixelOffset.y
   
-  const element = findElementAtOffset(container, offset)
+  let targetX: number, targetY: number
+  if (scrollContainer?.current) {
+    const scrollContainerRect = scrollContainer.current.getBoundingClientRect()
+    const scrollLeft = scrollContainer.current.scrollLeft
+    const scrollTop = scrollContainer.current.scrollTop
+    
+    // Calculate coordinates relative to scroll container content
+    targetX = scrollContainerRect.left + pixelOffset.x - scrollLeft
+    targetY = scrollContainerRect.top + pixelOffset.y - scrollTop
+  } else {
+    const containerRect = container.getBoundingClientRect()
+    targetX = containerRect.left + pixelOffset.x
+    targetY = containerRect.top + pixelOffset.y
+  }
+  
+  const element = findElementAtOffset(container, offset, scrollContainer)
   
   let distance = 0
   if (element) {

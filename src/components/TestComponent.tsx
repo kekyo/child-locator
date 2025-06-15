@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect, useCallback } from 'react'
 import { useLocator } from '../hooks/useLocator'
 import { useComponentRef } from '../hooks/useComponentRef'
 import type { DetectedComponent, OffsetCoordinates, CSSUnitValue } from '../types/useLocator'
@@ -149,17 +149,17 @@ export const TestComponent: React.FC = () => {
   }
 
   // Update offset from text inputs
-  const updateOffsetFromInputs = () => {
+  const updateOffsetFromInputs = useCallback(() => {
     // Preserve CSS unit strings as-is
     const xValue: CSSUnitValue = xInput.endsWith('px') || xInput.endsWith('%') || xInput.endsWith('vw') || xInput.endsWith('vh') || xInput.endsWith('rem') || xInput.endsWith('em') ? xInput : parseFloat(xInput) || 0
     const yValue: CSSUnitValue = yInput.endsWith('px') || yInput.endsWith('%') || yInput.endsWith('vw') || yInput.endsWith('vh') || yInput.endsWith('rem') || yInput.endsWith('em') ? yInput : parseFloat(yInput) || 0
     setOffset({ x: xValue, y: yValue })
-  }
+  }, [xInput, yInput])
 
   // Update offset when input values change
   useEffect(() => {
     updateOffsetFromInputs()
-  }, [xInput, yInput])
+  }, [updateOffsetFromInputs])
 
   // Monitor window size
   useEffect(() => {

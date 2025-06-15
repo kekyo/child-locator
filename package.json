@@ -1,7 +1,7 @@
 {
   "name": "child-locator",
   "private": false,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "A React Hook for locating child components at specific coordinates within a parent container",
   "keywords": [
@@ -38,21 +38,22 @@
     "LICENSE"
   ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "npm run lint && vite",
+    "build": "npm run lint && vite build",
     "build:lib": "npm run version:update && npm run build && npm run build:types",
-    "build:types": "tsc --project tsconfig.lib.json",
+    "build:types": "npm run lint && tsc --project tsconfig.lib.json",
     "version:update": "rv --npm .",
     "version:show": "rv .",
     "prepublishOnly": "npm run build:lib",
-    "lint": "eslint .",
+    "lint": "tsc -b && eslint .",
     "preview": "vite preview",
-    "test": "vitest --run",
-    "test:ui": "vitest --ui",
-    "test:e2e": "playwright test adhoc_test/ --reporter=list",
-    "test:e2e:ui": "playwright test --ui adhoc_test/",
-    "test:e2e:headed": "playwright test --headed adhoc_test/",
-    "test:e2e:simple": "playwright test adhoc_test/simple-center-test.spec.ts --reporter=list"
+    "test": "npm run test:root && npm run test:e2e",
+    "test:root": "npm run lint && vitest --run",
+    "test:ui": "npm run lint && vitest --ui",
+    "test:e2e": "npm run lint && playwright test adhoc_test/ --reporter=list",
+    "test:e2e:ui": "npm run lint && playwright test --ui adhoc_test/",
+    "test:e2e:headed": "npm run lint && playwright test --headed adhoc_test/",
+    "test:e2e:simple": "npm run lint && playwright test adhoc_test/simple-center-test.spec.ts --reporter=list"
   },
   "peerDependencies": {
     "react": ">=16.8.0",
