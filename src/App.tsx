@@ -10,7 +10,7 @@ interface GridItem {
   y: number
 }
 
-// Tetherでラップされたグリッドアイテムコンポーネント
+// Grid item component wrapped with Tether
 const BaseGridItem = React.forwardRef<HTMLDivElement, { 
   item: GridItem
   children: React.ReactNode 
@@ -50,12 +50,12 @@ const GridItem = withTether(BaseGridItem)
 function App() {
   const [mouseOffset, setMouseOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const [detected, setDetected] = useState<DetectedComponent | null>(null)
-  const childrenCount = 30 // 3x10のグリッドなので30個
+  const childrenCount = 30 // 30 items in 3x10 grid
   const containerRef = useRef<HTMLDivElement>(null)
   const innerContainerRef = useRef<HTMLDivElement>(null)
   const lastMouseEventRef = useRef<{ clientX: number; clientY: number } | null>(null)
 
-  // child-locatorを使用してコンポーネント検出（innerContainerRefを使用）
+  // Use child-locator for component detection (using innerContainerRef)
   useLocator(innerContainerRef, {
     offset: mouseOffset,
     onDetect: (detectedComponent) => {
@@ -65,20 +65,20 @@ function App() {
     scrollContainerRef: containerRef,
   })
 
-  // 座標計算を共通化
+  // Unified coordinate calculation
   const calculateMouseOffset = useCallback((clientX: number, clientY: number) => {
     const rect = containerRef.current?.getBoundingClientRect()
     const innerRect = innerContainerRef.current?.getBoundingClientRect()
     if (!rect || !innerRect) return null
 
-    // innerContainer相対の座標を計算
+    // Calculate coordinates relative to innerContainer
     const x = clientX - innerRect.left
     const y = clientY - innerRect.top
 
     return { x: Math.round(x), y: Math.round(y) }
   }, [])
 
-  // スクロール時の座標更新
+  // Update coordinates on scroll
   useEffect(() => {
     const handleScroll = () => {
       if (!lastMouseEventRef.current) return
@@ -99,11 +99,11 @@ function App() {
     }
   }, [calculateMouseOffset])
 
-  // 3x10のグリッドデータを生成
+  // Generate 3x10 grid data
   const gridItems: GridItem[] = []
   for (let row = 0; row < 10; row++) {
     for (let col = 0; col < 3; col++) {
-      const id = `アイテム-${row + 1}-${col + 1}`
+      const id = `Item-${row + 1}-${col + 1}`
       gridItems.push({
         id,
         row,
@@ -115,7 +115,7 @@ function App() {
   }
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    // 最後のマウス位置を記録
+    // Record last mouse position
     lastMouseEventRef.current = {
       clientX: event.clientX,
       clientY: event.clientY
@@ -135,9 +135,9 @@ function App() {
       display: 'flex',
       flexDirection: 'column'
     }}>
-      <h1>child-locatorテストページ - 3x10グリッド</h1>
+      <h1>child-locator Test Page - 3x10 Grid</h1>
       
-      {/* child-locatorの検出結果表示エリア */}
+      {/* child-locator detection results display area */}
       <div style={{
         backgroundColor: '#f0f0f0',
         padding: '15px',
@@ -145,24 +145,28 @@ function App() {
         marginBottom: '20px',
         minHeight: '100px'
       }}>
-        <h3>child-locator検出情報:</h3>
+        <h3>child-locator Detection Information:</h3>
         <div>
-          <p><strong>マウス座標:</strong> X: {mouseOffset.x}px, Y: {mouseOffset.y}px</p>
-          <p><strong>管理されているコンポーネント数:</strong> {childrenCount}</p>
-          <p><strong>検出されたアイテム:</strong> {' '}
-            {detected?.element ? 
-              `${detected.element.textContent?.split('(')[0]} (距離: ${detected.distanceFromOffset.toFixed(1)}px)` : 
-              'なし'
-            }
+          <p><strong>Mouse Coordinates:</strong> X: {mouseOffset.x}px, Y: {mouseOffset.y}px</p>
+          <p><strong>Managed Components Count:</strong> {childrenCount}</p>
+          <p><strong>Detected Item:</strong> {' '}
+            {detected?.element ? (
+              (() => {
+                const testId = detected.element.getAttribute('data-testid')
+                const elementText = detected.element.textContent?.split('\n')[0] // Get the first line of text
+                const displayName = testId || elementText || 'Unknown Element'
+                return `${displayName} (Distance: ${detected.distanceFromOffset.toFixed(1)}px)`
+              })()
+            ) : 'None'}
           </p>
-          <p><strong>要素の境界:</strong> {detected?.bounds ? 
+          <p><strong>Element Bounds:</strong> {detected?.bounds ? 
             `${detected.bounds.width.toFixed(0)}x${detected.bounds.height.toFixed(0)} at (${detected.bounds.x.toFixed(0)}, ${detected.bounds.y.toFixed(0)})` : 
-            '(なし)'
+            '(None)'
           }</p>
         </div>
       </div>
 
-      {/* スクロール可能なグリッドエリア */}
+      {/* Scrollable grid area */}
       <div 
         ref={containerRef}
         onMouseMove={handleMouseMove}
@@ -182,7 +186,7 @@ function App() {
             height: '1500px',
             position: 'relative'
           }}>
-          {/* マウス位置インジケーター */}
+          {/* Mouse position indicator */}
           <div 
             style={{
               position: 'absolute',
@@ -225,14 +229,14 @@ function App() {
         fontSize: '14px', 
         color: '#666' 
       }}>
-        <p><strong>説明:</strong></p>
+        <p><strong>Description:</strong></p>
         <ul>
-          <li>3列x10行のグリッドが表示されています</li>
-          <li>青いボーダーで識別しやすくしています</li>
-          <li>赤い点がマウス位置を示します</li>
-          <li><strong>child-locatorライブラリ</strong>が座標に基づいて要素を検出します</li>
-          <li>検出された要素の詳細情報が上部に表示されます</li>
-          <li>エリア内でスクロールできます</li>
+          <li>3 columns x 10 rows grid is displayed</li>
+          <li>Blue borders make items easy to identify</li>
+          <li>Red dot indicates mouse position</li>
+          <li><strong>child-locator library</strong> detects elements based on coordinates</li>
+          <li>Detailed information of detected elements is displayed at the top</li>
+          <li>You can scroll within the area</li>
         </ul>
       </div>
     </div>

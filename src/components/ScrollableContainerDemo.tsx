@@ -37,7 +37,7 @@ const ScrollableContainerDemo: React.FC = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [detected, setDetected] = useState<DetectedComponent | null>(null)
   const [offset, setOffset] = useState({ x: 50, y: 100 })
-  const childrenCount = 8 // 8つの子コンポーネント
+  const childrenCount = 8 // 8 child components
 
   useLocator(containerRef, {
     offset,

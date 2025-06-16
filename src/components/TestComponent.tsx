@@ -49,7 +49,7 @@ const TestComponent: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [offset, setOffset] = useState({ x: 100, y: 100 })
   const [detected, setDetected] = useState<DetectedComponent | null>(null)
-  const childrenCount = 6 // 6つの子コンポーネント
+  const childrenCount = 6 // 6 child components
 
   useLocator(containerRef, {
     offset,
