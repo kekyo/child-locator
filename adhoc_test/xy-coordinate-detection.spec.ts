@@ -1,224 +1,275 @@
 import { test, expect } from '@playwright/test'
 
-test('XY coordinate detection functionality comprehensive test', async ({ page }) => {
-  await page.goto('http://localhost:59517')
+test('XY Coordinate Detection Precision Test', async ({ page }) => {
+  await page.goto('http://localhost:59517/test-page.html')
   await page.waitForTimeout(1000)
   
-  console.log('=== XY Coordinate Detection Functionality Test Start ===')
+  console.log('\n=== XY Coordinate Detection Precision Test Start ===')
   
-  // Enable debug logs
-  await page.check('input[type="checkbox"]')
-  await page.waitForTimeout(500)
+  // Helper function to get current detection state
+  const getDetectionState = async () => {
+    return await page.evaluate(() => {
+      const detected = document.querySelector('#detected')?.textContent || 'Not found'
+      const offset = document.querySelector('#current-offset')?.textContent || 'Not found'
+      const calculated = document.querySelector('#calculated-position')?.textContent || 'Not found'
+      const distance = document.querySelector('#distance')?.textContent || 'Not found'
+      const childrenCount = document.querySelector('#children-count')?.textContent || 'Not found'
+      
+      return {
+        detected,
+        offset,
+        calculated,
+        distance,
+        childrenCount
+      }
+    })
+  }
+  
+  // Get element positions for reference
+  const getElementPositions = async () => {
+    return await page.evaluate(() => {
+      const container = document.querySelector('[data-testid="container"]')
+      const containerRect = container?.getBoundingClientRect()
+      const elements = Array.from(document.querySelectorAll('[data-testid^="child-"]'))
+      
+      return elements.map(el => {
+        const rect = el.getBoundingClientRect()
+        const testId = el.getAttribute('data-testid')
+        const itemNumber = testId?.replace('child-', '') || '0'
+        
+        return {
+          id: testId,
+          itemNumber: parseInt(itemNumber),
+          // Relative to container
+          left: rect.left - (containerRect?.left || 0),
+          top: rect.top - (containerRect?.top || 0),
+          right: rect.right - (containerRect?.left || 0),
+          bottom: rect.bottom - (containerRect?.top || 0),
+          centerX: rect.left - (containerRect?.left || 0) + rect.width / 2,
+          centerY: rect.top - (containerRect?.top || 0) + rect.height / 2,
+          width: rect.width,
+          height: rect.height
+        }
+      }).sort((a, b) => a.itemNumber - b.itemNumber)
+    })
+  }
   
   // Check initial state
-  const initialState = await page.evaluate(() => {
-    const paragraphs = Array.from(document.querySelectorAll('p'))
-    const detectedP = paragraphs.find(p => p.textContent?.includes('Detected:'))
-    const offsetP = paragraphs.find(p => p.textContent?.includes('Current Offset:'))
-    return {
-      detected: detectedP?.textContent || 'Not found',
-      offset: offsetP?.textContent || 'Not found'
-    }
+  const initialState = await getDetectionState()
+  const elementPositions = await getElementPositions()
+  
+  console.log(`Initial state: ${initialState.detected}`)
+  console.log(`Children count: ${initialState.childrenCount}`)
+  console.log(`Element positions:`)
+  
+  elementPositions.forEach(pos => {
+    console.log(`  ${pos.id}: center=(${pos.centerX.toFixed(1)}, ${pos.centerY.toFixed(1)}), bounds=(${pos.left.toFixed(1)}, ${pos.top.toFixed(1)}, ${pos.right.toFixed(1)}, ${pos.bottom.toFixed(1)})`)
   })
   
-  console.log(`Initial state:`)
-  console.log(`  ${initialState.detected}`)
-  console.log(`  ${initialState.offset}`)
+  // Test 1: Exact center detection for each element
+  console.log('\n=== Test 1: Exact Center Detection ===')
   
-  // Test with preset coordinates (adjusted to actual grid positions)
-  const presetTests = [
-    { name: 'Top Left', expectedItem: '1' },      // (75px, 63px)
-    { name: 'Top Center', expectedItem: '2' },    // (212px, 63px)
-    { name: 'Top Right', expectedItem: '3' },     // (349px, 63px)
-    { name: 'Middle Left', expectedItem: '4' },   // (75px, 175px)
-    { name: 'Center', expectedItem: '5' },        // (212px, 175px)
-    { name: 'Middle Right', expectedItem: '6' },  // (349px, 175px)
-    { name: 'Bottom Left', expectedItem: '7' },   // (75px, 287px)
-    { name: 'Bottom Center', expectedItem: '8' }, // (212px, 287px)
-    { name: 'Bottom Right', expectedItem: '9' },  // (349px, 287px)
-    { name: 'Extra Item', expectedItem: '10' }    // (212px, 399px)
-  ]
-  
-  for (const preset of presetTests) {
-    console.log(`\n--- ${preset.name} coordinate test ---`)
+  for (const element of elementPositions) {
+    console.log(`\n--- Testing ${element.id} center detection ---`)
     
-    // Scroll to top of page first to ensure buttons are visible
-    await page.evaluate(() => window.scrollTo(0, 0))
-    await page.waitForTimeout(200)
+    const centerX = Math.round(element.centerX)
+    const centerY = Math.round(element.centerY)
     
-    // Find and click button
-    const button = page.locator(`button:text-is("${preset.name}")`)
-    await button.scrollIntoViewIfNeeded()
-    await page.waitForTimeout(200)
-    
-    // Get state before click for comparison
-    const beforeClick = await page.evaluate(() => {
-      const offsetP = Array.from(document.querySelectorAll('p')).find(p => p.textContent?.includes('Current Offset:'))
-      return offsetP?.textContent || 'Not found'
-    })
-    
-    // Use JavaScript click to ensure it works
-    await page.evaluate((name) => {
-      const buttons = Array.from(document.querySelectorAll('button'))
-      const targetButton = buttons.find(b => b.textContent?.trim() === name)
-      if (targetButton) {
-        console.log(`Clicking button: ${name}`)
-        targetButton.click()
-      } else {
-        console.log(`Button not found: ${name}`)
-        console.log('Available buttons:', buttons.map(b => b.textContent?.trim()))
-      }
-    }, preset.name)
-    
-    await page.waitForTimeout(500) // Wait longer for state update
-    
-    // Verify state actually changed
-    const afterClick = await page.evaluate(() => {
-      const offsetP = Array.from(document.querySelectorAll('p')).find(p => p.textContent?.includes('Current Offset:'))
-      return offsetP?.textContent || 'Not found'
-    })
-    
-    if (beforeClick === afterClick) {
-      console.log(`Warning: State did not change after clicking ${preset.name}`)
-      console.log(`Before: ${beforeClick}`)
-      console.log(`After: ${afterClick}`)
-    }
-    
-    const currentState = await page.evaluate(() => {
-      const paragraphs = Array.from(document.querySelectorAll('p'))
-      const detectedP = paragraphs.find(p => p.textContent?.includes('Detected:'))
-      const offsetP = paragraphs.find(p => p.textContent?.includes('Current Offset:'))
-      const distanceP = paragraphs.find(p => p.textContent?.includes('Distance from offset:'))
-      return {
-        detected: detectedP?.textContent || 'Not found',
-        offset: offsetP?.textContent || 'Not found',
-        distance: distanceP?.textContent || 'Not found'
-      }
-    })
-    
-    console.log(`  ${currentState.detected}`)
-    console.log(`  ${currentState.offset}`)
-    console.log(`  ${currentState.distance}`)
-    
-    // Verify expected item is detected
-    expect(currentState.detected).toContain(`Item ${preset.expectedItem}`)
-  }
-  
-  // Test with custom coordinates (set directly with JavaScript)
-  const customCoordinates = [
-    { x: 50, y: 50, description: 'Near top-left corner' },
-    { x: 374, y: 50, description: 'Near top-right corner' },
-    { x: 50, y: 374, description: 'Near bottom-left corner' },
-    { x: 374, y: 374, description: 'Near bottom-right corner' },
-    { x: 212, y: 212, description: 'Near center' },
-    { x: 0, y: 0, description: 'Outside container (top-left)' },
-    { x: 424, y: 424, description: 'Outside container (bottom-right)' }
-  ]
-  
-  for (const coord of customCoordinates) {
-    console.log(`\n--- Custom coordinate test: ${coord.description} (${coord.x}, ${coord.y}) ---`)
-    
-    // Get text input elements instead of sliders
-    const xInput = page.getByRole('textbox', { name: /X Offset:/ })
-    const yInput = page.getByRole('textbox', { name: /Y Offset:/ })
-    
-    await xInput.fill(coord.x.toString())
-    await yInput.fill(coord.y.toString())
-    
+    await page.locator('#x-input').fill(`${centerX}px`)
+    await page.locator('#y-input').fill(`${centerY}px`)
     await page.waitForTimeout(300)
     
-    const currentState = await page.evaluate(() => {
-      const paragraphs = Array.from(document.querySelectorAll('p'))
-      const detectedP = paragraphs.find(p => p.textContent?.includes('Detected:'))
-      const offsetP = paragraphs.find(p => p.textContent?.includes('Current Offset:'))
-      const distanceP = paragraphs.find(p => p.textContent?.includes('Distance from offset:'))
-      return {
-        detected: detectedP?.textContent || 'Not found',
-        offset: offsetP?.textContent || 'Not found',
-        distance: distanceP?.textContent || 'Not found'
-      }
-    })
+    const state = await getDetectionState()
+    console.log(`Target center (${centerX}, ${centerY}): ${state.detected}`)
+    console.log(`Distance: ${state.distance}`)
     
-    console.log(`  ${currentState.detected}`)
-    console.log(`  ${currentState.offset}`)
-    console.log(`  ${currentState.distance}`)
+    // Should detect the correct item
+    expect(state.detected).toContain(`Item ${element.itemNumber}`)
+    expect(state.offset).toContain(`(${centerX}px, ${centerY}px)`)
     
-    // Verify coordinates are set correctly
-    expect(currentState.offset).toContain(`(${coord.x}, ${coord.y})`)
-    
-    // Verify some detection result exists (closest element is detected even outside container)
-    expect(currentState.detected).toBeTruthy()
+    // Distance should be very small (ideally 0 or close to 0)
+    const distanceValue = parseFloat(state.distance.replace('px', ''))
+    expect(distanceValue).toBeLessThan(5) // Allow small tolerance
   }
   
-  // Dynamic coordinate change test
-  console.log('\n--- Dynamic coordinate change test ---')
+  // Test 2: Corner detection for each element
+  console.log('\n=== Test 2: Corner Detection ===')
   
-  const xInput = page.getByRole('textbox', { name: /X Offset:/ })
-  const yInput = page.getByRole('textbox', { name: /Y Offset:/ })
+  const cornerOffsets = [
+    { name: 'top-left', dx: 1, dy: 1 },
+    { name: 'top-right', dx: -1, dy: 1 },
+    { name: 'bottom-left', dx: 1, dy: -1 },
+    { name: 'bottom-right', dx: -1, dy: -1 }
+  ]
   
-  // Change X coordinate gradually
-  const xValues = [0, 106, 212, 318, 424]
-  for (const x of xValues) {
-    await xInput.fill(x.toString())
-    await page.waitForTimeout(200)
-    
-    const state = await page.evaluate(() => {
-      const detectedP = Array.from(document.querySelectorAll('p')).find(p => p.textContent?.includes('Detected:'))
-      return detectedP?.textContent || 'Not found'
-    })
-    
-    console.log(`  X=${x}: ${state}`)
-    expect(state).toBeTruthy()
-  }
-  
-  // Change Y coordinate gradually
-  const yValues = [0, 106, 212, 318, 424]
-  for (const y of yValues) {
-    await yInput.fill(y.toString())
-    await page.waitForTimeout(200)
-    
-    const state = await page.evaluate(() => {
-      const detectedP = Array.from(document.querySelectorAll('p')).find(p => p.textContent?.includes('Detected:'))
-      return detectedP?.textContent || 'Not found'
-    })
-    
-    console.log(`  Y=${y}: ${state}`)
-    expect(state).toBeTruthy()
-  }
-  
-  // Distance calculation validity test
-  console.log('\n--- Distance calculation validity test ---')
-  
-  // Align exactly with center item (Item 5)
-  await page.evaluate(() => {
-    const buttons = Array.from(document.querySelectorAll('button'))
-    const centerButton = buttons.find(b => b.textContent?.trim() === 'Center')
-    if (centerButton) {
-      centerButton.click()
+  for (const element of elementPositions.slice(0, 3)) { // Test first 3 elements to save time
+    for (const corner of cornerOffsets) {
+      console.log(`\n--- Testing ${element.id} ${corner.name} corner ---`)
+      
+      const cornerX = Math.round(corner.dx > 0 ? element.left + 1 : element.right - 1)
+      const cornerY = Math.round(corner.dy > 0 ? element.top + 1 : element.bottom - 1)
+      
+      await page.locator('#x-input').fill(`${cornerX}px`)
+      await page.locator('#y-input').fill(`${cornerY}px`)
+      await page.waitForTimeout(200)
+      
+      const state = await getDetectionState()
+      console.log(`${corner.name} corner (${cornerX}, ${cornerY}): ${state.detected}`)
+      
+      // Should still detect the same item
+      expect(state.detected).toContain(`Item ${element.itemNumber}`)
     }
-  })
+  }
+  
+  // Test 3: Boundary detection between elements
+  console.log('\n=== Test 3: Boundary Detection ===')
+  
+  const boundaryTests = [
+    { from: elementPositions[0], to: elementPositions[1], name: 'Item 1 to Item 2' },
+    { from: elementPositions[1], to: elementPositions[2], name: 'Item 2 to Item 3' },
+    { from: elementPositions[3], to: elementPositions[4], name: 'Item 4 to Item 5' }
+  ]
+  
+  for (const boundary of boundaryTests) {
+    console.log(`\n--- Testing boundary: ${boundary.name} ---`)
+    
+    // Test point exactly between two elements
+    const midX = Math.round((boundary.from.right + boundary.to.left) / 2)
+    const midY = Math.round((boundary.from.centerY + boundary.to.centerY) / 2)
+    
+    await page.locator('#x-input').fill(`${midX}px`)
+    await page.locator('#y-input').fill(`${midY}px`)
+    await page.waitForTimeout(200)
+    
+    const state = await getDetectionState()
+    console.log(`Boundary point (${midX}, ${midY}): ${state.detected}`)
+    
+    // Should detect one of the two adjacent items
+    const detectedItem1 = state.detected.includes(`Item ${boundary.from.itemNumber}`)
+    const detectedItem2 = state.detected.includes(`Item ${boundary.to.itemNumber}`)
+    expect(detectedItem1 || detectedItem2).toBeTruthy()
+  }
+  
+  // Test 4: Outside container detection
+  console.log('\n=== Test 4: Outside Container Detection ===')
+  
+  const outsideTests = [
+    { x: -10, y: 50, name: 'Left outside' },
+    { x: 450, y: 50, name: 'Right outside' },
+    { x: 200, y: -10, name: 'Top outside' },
+    { x: 200, y: 450, name: 'Bottom outside' },
+    { x: -10, y: -10, name: 'Top-left outside' },
+    { x: 450, y: 450, name: 'Bottom-right outside' }
+  ]
+  
+  for (const outside of outsideTests) {
+    console.log(`\n--- Testing ${outside.name}: (${outside.x}, ${outside.y}) ---`)
+    
+    await page.locator('#x-input').fill(`${outside.x}px`)
+    await page.locator('#y-input').fill(`${outside.y}px`)
+    await page.waitForTimeout(200)
+    
+    const state = await getDetectionState()
+    console.log(`${outside.name}: ${state.detected}`)
+    
+    // Should detect the closest item or show appropriate behavior
+    expect(state.detected).toBeTruthy()
+    expect(state.detected).not.toBe('Not found')
+  }
+  
+  // Test 5: CSS Units precision
+  console.log('\n=== Test 5: CSS Units Precision ===')
+  
+  const cssUnitTests = [
+    { x: '25%', y: '25%', name: 'Percentage coordinates' },
+    { x: '50%', y: '50%', name: 'Center percentage' },
+    { x: '5vw', y: '10vh', name: 'Viewport units' },
+    { x: '15vw', y: '20vh', name: 'Larger viewport units' }
+  ]
+  
+  for (const cssTest of cssUnitTests) {
+    console.log(`\n--- Testing ${cssTest.name}: (${cssTest.x}, ${cssTest.y}) ---`)
+    
+    await page.locator('#x-input').fill(cssTest.x)
+    await page.locator('#y-input').fill(cssTest.y)
+    await page.waitForTimeout(300)
+    
+    const state = await getDetectionState()
+    console.log(`${cssTest.name}: ${state.detected}`)
+    console.log(`Calculated position: ${state.calculated}`)
+    console.log(`Distance: ${state.distance}`)
+    
+    // Should detect an item and show calculated pixel values
+    expect(state.detected).toBeTruthy()
+    expect(state.calculated).toContain('px')
+    expect(state.distance).toContain('px')
+  }
+  
+  // Test 6: Rapid coordinate changes
+  console.log('\n=== Test 6: Rapid Coordinate Changes ===')
+  
+  const rapidTests = [
+    { x: 100, y: 100 },
+    { x: 300, y: 100 },
+    { x: 300, y: 300 },
+    { x: 100, y: 300 },
+    { x: 200, y: 200 } // Back to center
+  ]
+  
+  for (let i = 0; i < rapidTests.length; i++) {
+    const test = rapidTests[i]
+    console.log(`\nRapid change ${i + 1}: (${test.x}, ${test.y})`)
+    
+    await page.locator('#x-input').fill(`${test.x}px`)
+    await page.locator('#y-input').fill(`${test.y}px`)
+    await page.waitForTimeout(100) // Shorter wait for rapid changes
+    
+    const state = await getDetectionState()
+    console.log(`Change ${i + 1}: ${state.detected}`)
+    
+    expect(state.detected).toBeTruthy()
+  }
+  
+  // Test 7: Precision validation with decimal coordinates
+  console.log('\n=== Test 7: Decimal Coordinate Precision ===')
+  
+  const decimalTests = [
+    { x: 150.5, y: 150.5, name: 'Half pixel precision' },
+    { x: 200.25, y: 200.75, name: 'Quarter pixel precision' },
+    { x: 175.1, y: 175.9, name: 'Decimal precision' }
+  ]
+  
+  for (const decimal of decimalTests) {
+    console.log(`\n--- Testing ${decimal.name}: (${decimal.x}, ${decimal.y}) ---`)
+    
+    await page.locator('#x-input').fill(`${decimal.x}px`)
+    await page.locator('#y-input').fill(`${decimal.y}px`)
+    await page.waitForTimeout(200)
+    
+    const state = await getDetectionState()
+    console.log(`${decimal.name}: ${state.detected}`)
+    console.log(`Distance: ${state.distance}`)
+    
+    expect(state.detected).toBeTruthy()
+  }
+  
+  // Final validation
+  console.log('\n=== Final Validation ===')
+  
+  // Return to initial state
+  await page.locator('#x-input').fill('212px')
+  await page.locator('#y-input').fill('175px')
   await page.waitForTimeout(300)
   
-  const centerDistanceResult = await page.evaluate(() => {
-    const distanceP = Array.from(document.querySelectorAll('p')).find(p => p.textContent?.includes('Distance from offset:'))
-    const text = distanceP?.textContent || ''
-    const match = text.match(/Distance from offset: ([\d.]+)px/)
-    return {
-      text: text,
-      distance: match ? parseFloat(match[1]) : null
-    }
-  })
+  const finalState = await getDetectionState()
+  console.log(`Final state: ${finalState.detected}`)
+  console.log(`Final offset: ${finalState.offset}`)
+  console.log(`Final distance: ${finalState.distance}`)
+  console.log(`Children count: ${finalState.childrenCount}`)
   
-  console.log(`Distance text: "${centerDistanceResult.text}"`)
-  console.log(`Distance to center item: ${centerDistanceResult.distance}px`)
+  expect(finalState.detected).toContain('Item 5')
+  expect(finalState.offset).toContain('(212px, 175px)')
+  expect(finalState.childrenCount).toBe('10')
   
-  // Verify distance can be obtained
-  expect(centerDistanceResult.distance).not.toBeNull()
-  
-  // Distance should be small since it's close to center coordinates
-  if (centerDistanceResult.distance !== null) {
-    expect(centerDistanceResult.distance).toBeLessThan(50)
-  }
-  
-  console.log('\n✅ XY coordinate detection functionality is working properly')
+  console.log('\n✅ XY Coordinate Detection Precision Test completed successfully')
 }) 

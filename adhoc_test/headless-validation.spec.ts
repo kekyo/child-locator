@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test'
 
 test.describe('useLocator Hook Validation', () => {
   test.beforeEach(async ({ page }) => {
-    // Access development server
-    await page.goto('http://localhost:59517')
+    // Access test page
+    await page.goto('http://localhost:59517/test-page.html')
     await page.waitForSelector('[data-testid="container"]', { timeout: 10000 })
   })
 

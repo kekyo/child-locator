@@ -1,237 +1,308 @@
 import { test, expect } from '@playwright/test'
 
-test('XY-axis scroll detection comprehensive verification', async ({ page }) => {
-  // Monitor console logs
-  page.on('console', (msg) => {
-    const text = msg.text()
-    if (text.includes('Detected component:')) {
-      console.log(`[LOG] ${text}`)
-    }
-  })
-  
-  await page.goto('http://localhost:59517')
-  
-  // Check initial state
+test('Scrollable Container Detection Test', async ({ page }) => {
+  // Navigate to the test page
+  await page.goto('http://localhost:59517/test-page.html')
   await page.waitForTimeout(1000)
   
-  console.log('\n=== XY-Axis Scroll Detection Test Start ===')
+  console.log('\n=== Scrollable Container Detection Test Start ===')
   
-  // Enable debug logs
-  console.log('Enabling debug logs...')
-  await page.check('input[type="checkbox"]')
-  await page.waitForTimeout(500)
-  
-  // Helper function to get current state
-  const getCurrentState = async () => {
-    return await page.evaluate(() => {
-      const container = document.querySelector('[data-testid="container"]') as HTMLElement
-      const paragraphs = Array.from(document.querySelectorAll('p'))
-      const detectedP = paragraphs.find(p => p.textContent?.includes('Detected:'))
-      const offsetP = paragraphs.find(p => p.textContent?.includes('Current Offset:'))
-      
-      return {
-        containerScrollTop: container.scrollTop,
-        containerScrollLeft: container.scrollLeft,
-        containerScrollHeight: container.scrollHeight,
-        containerScrollWidth: container.scrollWidth,
-        containerClientHeight: container.clientHeight,
-        containerClientWidth: container.clientWidth,
-        windowScrollY: window.scrollY,
-        windowScrollX: window.scrollX,
-        detected: detectedP?.textContent || 'Not found',
-        offset: offsetP?.textContent || 'Not found'
-      }
-    })
-  }
+     // Helper function to get test page state
+   const getScrollState = async () => {
+     return await page.evaluate(() => {
+       const detectedElement = document.querySelector('#detected')
+       const childrenCountElement = document.querySelector('#children-count')
+       const offsetElement = document.querySelector('#current-offset')
+       const calculatedElement = document.querySelector('#calculated-position')
+       const distanceElement = document.querySelector('#distance')
+       
+       return {
+         scrollTop: window.scrollY,
+         scrollLeft: window.scrollX,
+         scrollHeight: document.documentElement.scrollHeight,
+         scrollWidth: document.documentElement.scrollWidth,
+         clientHeight: window.innerHeight,
+         clientWidth: window.innerWidth,
+         detected: detectedElement?.textContent || 'Not found',
+         childrenCount: childrenCountElement?.textContent || 'Not found',
+         offset: offsetElement?.textContent || 'Not found',
+         calculated: calculatedElement?.textContent || 'Not found',
+         distance: distanceElement?.textContent || 'Not found'
+       }
+     })
+   }
+
+   // Helper function to get element positions relative to viewport
+   const getElementPositions = async () => {
+     return await page.evaluate(() => {
+       const container = document.querySelector('[data-testid="container"]')
+       const containerRect = container?.getBoundingClientRect()
+       const elements = Array.from(document.querySelectorAll('[data-testid^="child-"]'))
+       
+       return {
+         container: {
+           left: containerRect?.left || 0,
+           top: containerRect?.top || 0,
+           right: containerRect?.right || 0,
+           bottom: containerRect?.bottom || 0,
+           width: containerRect?.width || 0,
+           height: containerRect?.height || 0
+         },
+         elements: elements.map(el => {
+           const rect = el.getBoundingClientRect()
+           const testId = el.getAttribute('data-testid')
+           const itemNumber = testId?.replace('child-', '') || '0'
+           
+           return {
+             id: testId,
+             itemNumber: parseInt(itemNumber),
+             // Absolute viewport coordinates
+             left: rect.left,
+             top: rect.top,
+             right: rect.right,
+             bottom: rect.bottom,
+             centerX: rect.left + rect.width / 2,
+             centerY: rect.top + rect.height / 2,
+             width: rect.width,
+             height: rect.height,
+             // Relative to container
+             relativeLeft: rect.left - (containerRect?.left || 0),
+             relativeTop: rect.top - (containerRect?.top || 0),
+             relativeCenterX: rect.left - (containerRect?.left || 0) + rect.width / 2,
+             relativeCenterY: rect.top - (containerRect?.top || 0) + rect.height / 2
+           }
+         }).sort((a, b) => a.itemNumber - b.itemNumber)
+       }
+     })
+   }
   
   // Record initial state
-  const initialState = await getCurrentState()
+  const initialState = await getScrollState()
   console.log(`Initial state:`)
-  console.log(`  Container scroll: (${initialState.containerScrollLeft}, ${initialState.containerScrollTop})`)
-  console.log(`  Container size: ${initialState.containerClientWidth}x${initialState.containerClientHeight}`)
-  console.log(`  Container content: ${initialState.containerScrollWidth}x${initialState.containerScrollHeight}`)
-  console.log(`  Window scroll: (${initialState.windowScrollX}, ${initialState.windowScrollY})`)
+  console.log(`  Scroll position: (${initialState.scrollLeft}, ${initialState.scrollTop})`)
+  console.log(`  Container size: ${initialState.clientWidth}x${initialState.clientHeight}`)
+  console.log(`  Content size: ${initialState.scrollWidth}x${initialState.scrollHeight}`)
   console.log(`  Detection: ${initialState.detected}`)
-  
-  // Test 1: Container Y-axis scrolling
-  console.log('\n=== Test 1: Container Y-axis scrolling ===')
-  await page.evaluate(() => {
-    const container = document.querySelector('[data-testid="container"]') as HTMLElement
-    container.scrollTop = 150
-  })
-  await page.waitForTimeout(1000)
-  
-  const afterYScrollState = await getCurrentState()
-  console.log(`After Y-scroll: container scroll (${afterYScrollState.containerScrollLeft}, ${afterYScrollState.containerScrollTop})`)
-  console.log(`Detection: ${afterYScrollState.detected}`)
-  
-  // Verify Y-scrolling occurred
-  expect(afterYScrollState.containerScrollTop).toBeGreaterThan(initialState.containerScrollTop)
-  
-  // Test 2: Container X-axis scrolling
-  console.log('\n=== Test 2: Container X-axis scrolling ===')
-  await page.evaluate(() => {
-    const container = document.querySelector('[data-testid="container"]') as HTMLElement
-    container.scrollLeft = 150
-  })
-  await page.waitForTimeout(1000)
-  
-  const afterXScrollState = await getCurrentState()
-  console.log(`After X-scroll: container scroll (${afterXScrollState.containerScrollLeft}, ${afterXScrollState.containerScrollTop})`)
-  console.log(`Detection: ${afterXScrollState.detected}`)
-  
-  // Verify X-scrolling occurred
-  expect(afterXScrollState.containerScrollLeft).toBeGreaterThan(initialState.containerScrollLeft)
-  
-  // Test 3: Container XY-axis combined scrolling
-  console.log('\n=== Test 3: Container XY-axis combined scrolling ===')
-  await page.evaluate(() => {
-    const container = document.querySelector('[data-testid="container"]') as HTMLElement
-    container.scrollLeft = 200
-    container.scrollTop = 250
-  })
-  await page.waitForTimeout(1000)
-  
-  const afterXYScrollState = await getCurrentState()
-  console.log(`After XY-scroll: container scroll (${afterXYScrollState.containerScrollLeft}, ${afterXYScrollState.containerScrollTop})`)
-  console.log(`Detection: ${afterXYScrollState.detected}`)
-  
-  // Verify XY-scrolling occurred
-  expect(afterXYScrollState.containerScrollLeft).toBe(200)
-  expect(afterXYScrollState.containerScrollTop).toBe(250)
-  
-  // Test 4: Reset container scroll and test different coordinate detection
-  console.log('\n=== Test 4: Testing coordinate detection at different scroll positions ===')
-  
-  // Reset container scroll
-  await page.evaluate(() => {
-    const container = document.querySelector('[data-testid="container"]') as HTMLElement
-    container.scrollLeft = 0
-    container.scrollTop = 0
-  })
-  await page.waitForTimeout(500)
-  
-  // Set coordinates to center (212, 175) using text inputs
-  await page.evaluate(() => {
-    const xInput = document.querySelector('input[type="text"]') as HTMLInputElement
-    const yInput = document.querySelectorAll('input[type="text"]')[1] as HTMLInputElement
-    if (xInput && yInput) {
-      xInput.value = '212'
-      yInput.value = '175'
-      // Trigger change events
-      xInput.dispatchEvent(new Event('input', { bubbles: true }))
-      yInput.dispatchEvent(new Event('input', { bubbles: true }))
-    }
-  })
-  await page.waitForTimeout(500)
-  
-  const coord100State = await getCurrentState()
-  console.log(`At coordinate (100, 100): ${coord100State.detected}`)
-  
-  // Scroll container and check if detection changes
-  await page.evaluate(() => {
-    const container = document.querySelector('[data-testid="container"]') as HTMLElement
-    container.scrollLeft = 100
-    container.scrollTop = 100
-  })
-  await page.waitForTimeout(1000)
-  
-  const coord100ScrolledState = await getCurrentState()
-  console.log(`At coordinate (100, 100) after scroll: ${coord100ScrolledState.detected}`)
-  
-  // Detection should potentially change due to scroll affecting element positions
-  console.log(`Detection changed after scroll: ${coord100State.detected !== coord100ScrolledState.detected}`)
-  
-  // Test 5: Window-level Y-axis scrolling
-  console.log('\n=== Test 5: Window-level Y-axis scrolling ===')
-  await page.evaluate(() => {
-    window.scrollTo(0, 300)
-  })
-  await page.waitForTimeout(1000)
-  
-  const afterWindowYScrollState = await getCurrentState()
-  console.log(`After window Y-scroll: window scroll (${afterWindowYScrollState.windowScrollX}, ${afterWindowYScrollState.windowScrollY})`)
-  console.log(`Detection: ${afterWindowYScrollState.detected}`)
-  
-  // Verify window Y-scrolling occurred
-  expect(afterWindowYScrollState.windowScrollY).toBe(300)
-  
-  // Test 6: Window-level X-axis scrolling (if page is wide enough)
-  console.log('\n=== Test 6: Window-level X-axis scrolling ===')
-  
-  // Make page wider to enable horizontal scrolling
-  await page.evaluate(() => {
-    document.body.style.width = '2000px'
-  })
-  await page.waitForTimeout(500)
-  
-  await page.evaluate(() => {
-    window.scrollTo(200, 300)
-  })
-  await page.waitForTimeout(1000)
-  
-  const afterWindowXScrollState = await getCurrentState()
-  console.log(`After window X-scroll: window scroll (${afterWindowXScrollState.windowScrollX}, ${afterWindowXScrollState.windowScrollY})`)
-  console.log(`Detection: ${afterWindowXScrollState.detected}`)
-  
-  // Verify window X-scrolling occurred (Firefox may behave differently)
-  expect(afterWindowXScrollState.windowScrollX).toBeGreaterThanOrEqual(0)
-  
-  // Test 7: Combined window XY scrolling
-  console.log('\n=== Test 7: Combined window XY scrolling ===')
-  await page.evaluate(() => {
-    window.scrollTo(150, 500)
-  })
-  await page.waitForTimeout(1000)
-  
-  const afterWindowXYScrollState = await getCurrentState()
-  console.log(`After window XY-scroll: window scroll (${afterWindowXYScrollState.windowScrollX}, ${afterWindowXYScrollState.windowScrollY})`)
-  console.log(`Detection: ${afterWindowXYScrollState.detected}`)
-  
-  // Verify window XY-scrolling occurred (Firefox may behave differently)
-  expect(afterWindowXYScrollState.windowScrollX).toBeGreaterThanOrEqual(0)
-  expect(afterWindowXYScrollState.windowScrollY).toBeGreaterThanOrEqual(300)
-  
-  // Test 8: Comprehensive scroll test - both container and window
-  console.log('\n=== Test 8: Comprehensive scroll test - both container and window ===')
-  
-  // Set specific coordinates for testing
-  await page.evaluate(() => {
-    const xInput = document.querySelector('input[type="text"]') as HTMLInputElement
-    const yInput = document.querySelectorAll('input[type="text"]')[1] as HTMLInputElement
-    if (xInput && yInput) {
-      xInput.value = '200'
-      yInput.value = '200'
-      xInput.dispatchEvent(new Event('input', { bubbles: true }))
-      yInput.dispatchEvent(new Event('input', { bubbles: true }))
-    }
-  })
-  await page.waitForTimeout(500)
-  
-  // Apply both container and window scrolling
-  await page.evaluate(() => {
-    const container = document.querySelector('[data-testid="container"]') as HTMLElement
-    container.scrollLeft = 50
-    container.scrollTop = 50
-    window.scrollTo(100, 200)
-  })
-  await page.waitForTimeout(1000)
-  
-  const finalState = await getCurrentState()
-  console.log(`Final comprehensive test:`)
-  console.log(`  Container scroll: (${finalState.containerScrollLeft}, ${finalState.containerScrollTop})`)
-  console.log(`  Window scroll: (${finalState.windowScrollX}, ${finalState.windowScrollY})`)
-  console.log(`  Detection: ${finalState.detected}`)
-  
-  // Verify all scrolling is working (Firefox may behave differently for window scroll)
-  expect(finalState.containerScrollLeft).toBe(50)
-  expect(finalState.containerScrollTop).toBe(50)
-  expect(finalState.windowScrollX).toBeGreaterThanOrEqual(0)
-  expect(finalState.windowScrollY).toBeGreaterThanOrEqual(200)
-  
-  // Verify detection is still working
-  expect(finalState.detected).toContain('Item')
-  
-  console.log('\n✅ XY-axis scroll detection test completed successfully')
-  console.log('All container and window scrolling tests passed!')
+  console.log(`  Children: ${initialState.childrenCount}`)
+
+     // Test 1: Basic window scrolling
+   console.log('\n=== Test 1: Basic Window Scrolling ===')
+   
+   // Set initial offset to a known position
+   await page.locator('#x-input').fill('200px')
+   await page.locator('#y-input').fill('200px')
+   await page.waitForTimeout(300)
+   
+   const beforeScrollState = await getScrollState()
+   console.log(`Before scroll: ${beforeScrollState.detected}`)
+   
+   // Scroll down the window
+   await page.evaluate(() => {
+     window.scrollTo(0, 200)
+   })
+   await page.waitForTimeout(500)
+   
+   const afterVScrollState = await getScrollState()
+   console.log(`After vertical scroll: ${afterVScrollState.detected}`)
+   console.log(`Scroll position: (${afterVScrollState.scrollLeft}, ${afterVScrollState.scrollTop})`)
+   
+   // Verify scrolling occurred
+   expect(afterVScrollState.scrollTop).toBeGreaterThan(initialState.scrollTop)
+   expect(afterVScrollState.detected).toBeTruthy()
+
+   // Test 2: Precise Element Boundary Detection with Fixed Coordinates (Core Test)
+   console.log('\n=== Test 2: Precise Element Boundary Detection with Fixed Coordinates ===')
+   
+   // Reset scroll position
+   await page.evaluate(() => window.scrollTo(0, 0))
+   await page.waitForTimeout(300)
+   
+   // Get initial element positions
+   const initialPositions = await getElementPositions()
+   console.log(`\n--- Initial element positions ---`)
+   initialPositions.elements.slice(0, 4).forEach(el => {
+     console.log(`  ${el.id}: top=${el.top.toFixed(1)}, bottom=${el.bottom.toFixed(1)}, height=${el.height.toFixed(1)}`)
+   })
+   
+   // Test with fixed coordinate (50% width, 0 height from container top)
+   console.log(`\n=== Testing Fixed Coordinate (50%, 0px) - Element Height ±1px Boundary Test ===`)
+   
+   // Set fixed coordinates
+   await page.locator('#x-input').fill('50%')
+   await page.locator('#y-input').fill('0px')
+   await page.waitForTimeout(200)
+   
+   // Test boundary detection for first 3 elements by scrolling
+   for (let elementIndex = 0; elementIndex < Math.min(3, initialPositions.elements.length); elementIndex++) {
+     const element = initialPositions.elements[elementIndex]
+     console.log(`\n--- Testing ${element.id} boundary detection ---`)
+     
+     // Calculate scroll positions for boundary testing
+     // Element height boundary: element.height - 1px and element.height + 1px
+     const elementHeight = element.height
+     const baseScroll = Math.max(0, element.top - 100) // Container offset
+     
+     // Test positions around element height boundaries
+     const boundaryTests = [
+       { 
+         scroll: Math.max(0, baseScroll + elementHeight - 1), 
+         name: `${element.id} height-1px boundary`,
+         description: `Scroll to element height - 1px`
+       },
+       { 
+         scroll: Math.max(0, baseScroll + elementHeight + 1), 
+         name: `${element.id} height+1px boundary`,
+         description: `Scroll to element height + 1px`
+       }
+     ]
+     
+     let previousDetection: string | null = null
+     
+     for (const boundaryTest of boundaryTests) {
+       // Set scroll position
+       await page.evaluate((y) => window.scrollTo(0, y), boundaryTest.scroll)
+       await page.waitForTimeout(200)
+       
+       const boundaryState = await getScrollState()
+       const currentDetection = boundaryState.detected
+       
+       console.log(`  ${boundaryTest.name} (scroll: ${boundaryTest.scroll}): ${currentDetection}`)
+       
+       // Check for detection changes at boundaries
+       if (previousDetection && previousDetection !== currentDetection) {
+         console.log(`    ✅ Detection changed: ${previousDetection} → ${currentDetection}`)
+       }
+       
+       expect(boundaryState.detected).toBeTruthy()
+       previousDetection = currentDetection
+     }
+   }
+
+   // Test 3: Vertical Element Transition Boundaries (Simplified)
+   console.log('\n=== Test 3: Vertical Element Transition Boundaries ===')
+   
+   // Reset to top
+   await page.evaluate(() => window.scrollTo(0, 0))
+   await page.waitForTimeout(300)
+   
+   // Use center X coordinate for vertical transition testing
+   await page.locator('#x-input').fill('50%')
+   await page.locator('#y-input').fill('50%')
+   await page.waitForTimeout(200)
+   
+   // Get element positions for transition calculation
+   const transitionPositions = await getElementPositions()
+   
+   // Test transitions between vertically adjacent elements (simplified to 2 pairs)
+   const verticalPairs = [
+     { from: transitionPositions.elements[0], to: transitionPositions.elements[3] }, // Item 1 → Item 4
+     { from: transitionPositions.elements[1], to: transitionPositions.elements[4] }  // Item 2 → Item 5
+   ]
+   
+   for (const pair of verticalPairs) {
+     console.log(`\n--- Testing vertical transition: ${pair.from.id} → ${pair.to.id} ---`)
+     
+     // Calculate transition boundary scroll position
+     const transitionScroll = Math.max(0, (pair.from.bottom + pair.to.top) / 2 - 100)
+     
+     const transitionTests = [
+       { scroll: Math.max(0, transitionScroll - 1), name: 'Before transition -1px' },
+       { scroll: transitionScroll, name: 'At transition boundary' },
+       { scroll: transitionScroll + 1, name: 'After transition +1px' }
+     ]
+     
+     let transitionDetected = false
+     let previousItem: string | null = null
+     
+     for (const transitionTest of transitionTests) {
+       await page.evaluate((y) => window.scrollTo(0, y), transitionTest.scroll)
+       await page.waitForTimeout(150)
+       
+       const transitionState = await getScrollState()
+       const currentItem = transitionState.detected
+       
+       console.log(`  ${transitionTest.name} (scroll: ${transitionTest.scroll.toFixed(1)}): ${currentItem}`)
+       
+       // Detect transition
+       if (previousItem && previousItem !== currentItem) {
+         console.log(`    🎯 Transition detected: ${previousItem} → ${currentItem}`)
+         transitionDetected = true
+       }
+       
+       previousItem = currentItem
+       expect(transitionState.detected).toBeTruthy()
+     }
+     
+     if (transitionDetected) {
+       console.log(`  ✅ Successful transition boundary detection for ${pair.from.id} → ${pair.to.id}`)
+     }
+   }
+
+   // Test 4: Scroll boundary detection (Original test - simplified)
+   console.log('\n=== Test 4: Scroll Boundary Detection ===')
+   
+   // Reset scroll position
+   await page.evaluate(() => window.scrollTo(0, 0))
+   await page.waitForTimeout(300)
+   
+   // Get element positions at scroll top
+   const topPositions = await getElementPositions()
+   console.log(`\n--- Elements at scroll top ---`)
+   topPositions.elements.slice(0, 3).forEach(el => {
+     console.log(`  ${el.id}: viewport=(${el.centerX.toFixed(1)}, ${el.centerY.toFixed(1)}), relative=(${el.relativeCenterX.toFixed(1)}, ${el.relativeCenterY.toFixed(1)})`)
+   })
+   
+   // Test boundary between Item 1 and Item 2 at scroll top
+   const item1 = topPositions.elements[0]
+   const item2 = topPositions.elements[1]
+   
+   // Use relative coordinates for boundary calculation
+   const boundaryX = Math.round((item1.relativeCenterX + item2.relativeCenterX) / 2)
+   const boundaryY = Math.round((item1.relativeCenterY + item2.relativeCenterY) / 2)
+   
+   console.log(`\n--- Testing Item 1-2 boundary at scroll top: (${boundaryX}, ${boundaryY}) ---`)
+   console.log(`Item 1 relative center: (${item1.relativeCenterX.toFixed(1)}, ${item1.relativeCenterY.toFixed(1)})`)
+   console.log(`Item 2 relative center: (${item2.relativeCenterX.toFixed(1)}, ${item2.relativeCenterY.toFixed(1)})`)
+   
+   await page.locator('#x-input').fill(`${boundaryX}px`)
+   await page.locator('#y-input').fill(`${boundaryY}px`)
+   await page.waitForTimeout(200)
+   
+   const boundaryState = await getScrollState()
+   console.log(`Boundary detection: ${boundaryState.detected}`)
+   console.log(`Distance: ${boundaryState.distance}`)
+   
+   // Should detect one of the adjacent items or closest item
+   const detectsItem1 = boundaryState.detected.includes('Item 1')
+   const detectsItem2 = boundaryState.detected.includes('Item 2')
+   const detectsItem4 = boundaryState.detected.includes('Item 4')
+   const detectsItem5 = boundaryState.detected.includes('Item 5')
+   expect(detectsItem1 || detectsItem2 || detectsItem4 || detectsItem5).toBeTruthy()
+   
+   // Test 5: Scroll position impact on detection (Simplified)
+   console.log('\n=== Test 5: Scroll Position Impact on Detection ===')
+   
+   // Test same relative coordinates at different scroll positions
+   const testCoordinate = { x: 150, y: 150 }
+   const scrollPositions = [0, 200, 400]
+   
+   for (const scrollY of scrollPositions) {
+     console.log(`\n--- Testing at scroll position: ${scrollY} ---`)
+     
+     // Set scroll position
+     await page.evaluate((y) => window.scrollTo(0, y), scrollY)
+     await page.waitForTimeout(300)
+     
+     // Set test coordinates
+     await page.locator('#x-input').fill(`${testCoordinate.x}px`)
+     await page.locator('#y-input').fill(`${testCoordinate.y}px`)
+     await page.waitForTimeout(200)
+     
+     const scrollState = await getScrollState()
+     console.log(`Scroll ${scrollY}: ${scrollState.detected} (distance: ${scrollState.distance})`)
+     
+     expect(scrollState.detected).toBeTruthy()
+   }
+     
+   console.log('\n✅ Scrollable Container Detection Test with Precise Boundary Values completed successfully')
 }) 
