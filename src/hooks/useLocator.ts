@@ -135,7 +135,7 @@ function findElementByBounds(
  * identifies child components at XY coordinate offset positions
  * Uses react-attractor for component registration and retrieval
  */
-export const useTetheredLocator = (
+export const useLocator = (
   refTarget: RefObject<HTMLElement | null>,
   options: UseLocatorOptions
 ): UseLocatorReturn => {

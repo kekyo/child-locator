@@ -1,5 +1,5 @@
 // Main implementation using react-attractor
-export { useTetheredLocator as useLocator } from './hooks/useTetheredLocator'
+export { useLocator } from './hooks/useLocator'
 
 // Re-export react-attractor components for user convenience
 export { TetherProvider, useTetherContext, withTether } from 'react-attractor'
