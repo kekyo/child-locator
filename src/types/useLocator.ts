@@ -42,16 +42,4 @@ export interface UseLocatorOptions {
   enabled?: boolean
   /** Optional scroll container reference for scroll-container-relative coordinate calculation */
   scrollContainerRef?: RefObject<HTMLElement | null>
-}
-
-/**
- * Return value of useLocator hook
- */
-export interface UseLocatorReturn {
-  /** Currently detected component */
-  detected: DetectedComponent | null
-  /** Number of child elements */
-  childrenCount: number
-  /** Whether monitoring is enabled */
-  isEnabled: boolean
 } 

@@ -9,5 +9,4 @@ export type {
   DetectedComponent,
   OffsetCoordinates,
   UseLocatorOptions,
-  UseLocatorReturn,
 } from './types/useLocator'

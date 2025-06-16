@@ -50,14 +50,17 @@ const GridItem = withTether(BaseGridItem)
 function App() {
   const [mouseOffset, setMouseOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const [detected, setDetected] = useState<DetectedComponent | null>(null)
+  const childrenCount = 30 // 3x10のグリッドなので30個
   const containerRef = useRef<HTMLDivElement>(null)
   const innerContainerRef = useRef<HTMLDivElement>(null)
   const lastMouseEventRef = useRef<{ clientX: number; clientY: number } | null>(null)
 
   // child-locatorを使用してコンポーネント検出（innerContainerRefを使用）
-  const { childrenCount } = useLocator(innerContainerRef, {
+  useLocator(innerContainerRef, {
     offset: mouseOffset,
-    onDetect: setDetected,
+    onDetect: (detectedComponent) => {
+      setDetected(detectedComponent)
+    },
     enabled: true,
     scrollContainerRef: containerRef,
   })

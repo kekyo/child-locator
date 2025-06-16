@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react'
+import { useCallback, useEffect, useRef, useMemo } from 'react'
 import type { RefObject } from 'react'
 import { useTetherContext } from 'react-attractor'
-import type { DetectedComponent, UseLocatorOptions, UseLocatorReturn, OffsetCoordinates } from '../types/useLocator'
+import type { DetectedComponent, UseLocatorOptions, OffsetCoordinates } from '../types/useLocator'
 import { InvisibleElementManager } from '../utils/invisibleElementManager'
 
 /**
@@ -138,11 +138,8 @@ function findElementByBounds(
 export const useLocator = (
   refTarget: RefObject<HTMLElement | null>,
   options: UseLocatorOptions
-): UseLocatorReturn => {
+): void => {
   const { offset, onDetect, enabled = true, scrollContainerRef } = options
-  
-  const [detected, setDetected] = useState<DetectedComponent | null>(null)
-  const [childrenCount, setChildrenCount] = useState(0)
   
   // Get tether context for component registration/retrieval
   const { getTether } = useTetherContext()
@@ -245,7 +242,6 @@ export const useLocator = (
     }
     
     lastResultRef.current = hash
-    setDetected(component)
     currentValuesRef.current.onDetect(component)
   }, [])
   
@@ -290,36 +286,6 @@ export const useLocator = (
           targetY = containerRect.top + pixelOffset.y
         }
         
-        // Update children count (count react-attractor registered components recursively)
-        let registeredComponentsCount = 0
-        
-        // Function to recursively check all descendant elements
-        const countRegisteredDescendants = (element: HTMLElement) => {
-          const tetherInfo = getTether(element)
-          if (tetherInfo) {
-            registeredComponentsCount++
-          }
-          
-          // Check all child elements recursively
-          const children = element.children
-          for (let i = 0; i < children.length; i++) {
-            const child = children[i]
-            if (child instanceof HTMLElement) {
-              countRegisteredDescendants(child)
-            }
-          }
-        }
-        
-        // Start recursive count from container
-        countRegisteredDescendants(refTarget.current)
-        
-        setChildrenCount(prevCount => {
-          if (prevCount !== registeredComponentsCount) {
-            return registeredComponentsCount
-          }
-          return prevCount
-        })
-        
         let detectedComponent: DetectedComponent
         
         if (!targetElement) {
@@ -355,7 +321,7 @@ export const useLocator = (
         processingRef.current = false
       }
     }, 0)
-  }, [stableOnDetect, convertToPixels, refTarget, effectiveScrollContainer, getComponentFromElement, getTether])
+  }, [stableOnDetect, convertToPixels, refTarget, effectiveScrollContainer, getComponentFromElement])
   
   // Observer setup for monitoring DOM changes and layout updates
   useEffect(() => {
@@ -448,10 +414,4 @@ export const useLocator = (
       window.removeEventListener('resize', handleResize)
     }
   }, [detectComponent, enabled, refTarget, effectiveScrollContainer])
-  
-  return {
-    detected,
-    childrenCount,
-    isEnabled: enabled,
-  }
 } 
