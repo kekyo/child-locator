@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Child Locator Test Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 400px;
+            height: 400px;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            position: relative;
+            background-color: #f8f9fa;
+            background-image: 
+                linear-gradient(to right, #e9ecef 1px, transparent 1px),
+                linear-gradient(to bottom, #e9ecef 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        
+        .child-item {
+            position: absolute;
+            width: 120px;
+            height: 80px;
+            padding: 10px;
+            background-color: #e3f2fd;
+            border: 2px solid #1976d2;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #1976d2;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .info-panel {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+        }
+        
+        .controls input {
+            margin: 5px;
+            padding: 4px;
+            width: 120px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Child Locator Test Page</h1>
+    
+    <div class="controls">
+        <label>
+            X Offset: 
+            <input type="text" id="x-input" value="212px" placeholder="e.g., 212px, 50%, 10vw">
+        </label>
+        <label>
+            Y Offset: 
+            <input type="text" id="y-input" value="175px" placeholder="e.g., 175px, 25%, 5vh">
+        </label>
+    </div>
+    
+    <div class="container" data-testid="container">
+        <div class="child-item" data-testid="child-1" style="left: 50px; top: 50px;">
+            <div>Item 1</div>
+            <small>(50, 50)</small>
+        </div>
+        <div class="child-item" data-testid="child-2" style="left: 200px; top: 50px;">
+            <div>Item 2</div>
+            <small>(200, 50)</small>
+        </div>
+        <div class="child-item" data-testid="child-3" style="left: 350px; top: 50px;">
+            <div>Item 3</div>
+            <small>(350, 50)</small>
+        </div>
+        <div class="child-item" data-testid="child-4" style="left: 50px; top: 200px;">
+            <div>Item 4</div>
+            <small>(50, 200)</small>
+        </div>
+        <div class="child-item" data-testid="child-5" style="left: 200px; top: 200px;">
+            <div>Item 5</div>
+            <small>(200, 200)</small>
+        </div>
+        <div class="child-item" data-testid="child-6" style="left: 350px; top: 200px;">
+            <div>Item 6</div>
+            <small>(350, 200)</small>
+        </div>
+        <div class="child-item" data-testid="child-7" style="left: 50px; top: 350px;">
+            <div>Item 7</div>
+            <small>(50, 350)</small>
+        </div>
+        <div class="child-item" data-testid="child-8" style="left: 200px; top: 350px;">
+            <div>Item 8</div>
+            <small>(200, 350)</small>
+        </div>
+        <div class="child-item" data-testid="child-9" style="left: 350px; top: 350px;">
+            <div>Item 9</div>
+            <small>(350, 350)</small>
+        </div>
+        <div class="child-item" data-testid="child-10" style="left: 200px; top: 399px;">
+            <div>Item 10</div>
+            <small>(200, 399)</small>
+        </div>
+    </div>
+    
+    <div class="info-panel">
+        <p>Children Count: <span id="children-count">10</span></p>
+        <p>Current Offset: <span id="current-offset">(212px, 175px)</span></p>
+        <p>Calculated Position: <span id="calculated-position">(212px, 175px)</span></p>
+        <p>Detected: <span id="detected">Item 5</span></p>
+        <p>Distance from offset: <span id="distance">0.0px</span></p>
+    </div>
+    
+    <!-- Add extra content to make page scrollable -->
+    <div style="height: 1000px; background: linear-gradient(to bottom, #f8f9fa, #ffffff); margin-top: 20px; padding: 20px;">
+        <h2>Extra Content for Scrolling</h2>
+        <p>This section adds height to make the page scrollable for testing scroll detection functionality.</p>
+        <div style="height: 200px; background: #e9ecef; margin: 20px 0; padding: 10px;">
+            <h3>Section 1</h3>
+            <p>Content area 1</p>
+        </div>
+        <div style="height: 200px; background: #dee2e6; margin: 20px 0; padding: 10px;">
+            <h3>Section 2</h3>
+            <p>Content area 2</p>
+        </div>
+        <div style="height: 200px; background: #ced4da; margin: 20px 0; padding: 10px;">
+            <h3>Section 3</h3>
+            <p>Content area 3</p>
+        </div>
+        <div style="height: 200px; background: #adb5bd; margin: 20px 0; padding: 10px;">
+            <h3>Section 4</h3>
+            <p>Content area 4 - End of page</p>
+        </div>
+    </div>
+    
+    <script>
+        // Simple detection implementation
+        let currentOffset = { x: '212px', y: '175px' };
+        let detectedElement = null;
+        let distance = 0;
+        
+        const container = document.querySelector('[data-testid="container"]');
+        const xInput = document.getElementById('x-input');
+        const yInput = document.getElementById('y-input');
+        
+        function convertToPixels(value, isX = true) {
+            if (typeof value === 'number') return value;
+            
+            const containerRect = container.getBoundingClientRect();
+            const containerWidth = containerRect.width - 20; // subtract padding
+            const containerHeight = containerRect.height - 20;
+            
+            if (value.endsWith('%')) {
+                const percentage = parseFloat(value);
+                return isX ? (containerWidth * percentage) / 100 : (containerHeight * percentage) / 100;
+            }
+            
+            if (value.endsWith('vw')) {
+                const vw = parseFloat(value);
+                return (window.innerWidth * vw) / 100;
+            }
+            
+            if (value.endsWith('vh')) {
+                const vh = parseFloat(value);
+                return (window.innerHeight * vh) / 100;
+            }
+            
+            if (value.endsWith('px')) {
+                return parseFloat(value);
+            }
+            
+            return parseFloat(value) || 0;
+        }
+        
+        function detectAtPosition(x, y) {
+            const children = Array.from(container.children).filter(child => 
+                child.classList.contains('child-item')
+            );
+            
+            const pixelX = convertToPixels(x, true);
+            const pixelY = convertToPixels(y, false);
+            
+            let closestElement = null;
+            let closestDistance = Infinity;
+            
+            children.forEach(child => {
+                const style = window.getComputedStyle(child);
+                const left = parseFloat(style.left);
+                const top = parseFloat(style.top);
+                const width = child.offsetWidth;
+                const height = child.offsetHeight;
+                
+                const centerX = left + width / 2;
+                const centerY = top + height / 2;
+                
+                const dist = Math.sqrt(
+                    Math.pow(centerX - pixelX, 2) + 
+                    Math.pow(centerY - pixelY, 2)
+                );
+                
+                if (dist < closestDistance) {
+                    closestDistance = dist;
+                    closestElement = child;
+                }
+            });
+            
+            detectedElement = closestElement;
+            distance = closestDistance;
+            updateUI();
+        }
+        
+        function updateUI() {
+            document.getElementById('current-offset').textContent = `(${currentOffset.x}, ${currentOffset.y})`;
+            document.getElementById('calculated-position').textContent = `(${convertToPixels(currentOffset.x, true).toFixed(0)}px, ${convertToPixels(currentOffset.y, false).toFixed(0)}px)`;
+            document.getElementById('detected').textContent = detectedElement ? detectedElement.textContent.split('(')[0].trim() : 'None';
+            document.getElementById('distance').textContent = `${distance.toFixed(1)}px`;
+            document.getElementById('children-count').textContent = Array.from(container.children).filter(child => child.classList.contains('child-item')).length;
+        }
+        
+        function setOffset(x, y) {
+            currentOffset = { x, y };
+            detectAtPosition(x, y);
+        }
+        
+        // Event listeners
+        xInput.addEventListener('input', () => {
+            setOffset(xInput.value, currentOffset.y);
+        });
+        
+        yInput.addEventListener('input', () => {
+            setOffset(currentOffset.x, yInput.value);
+        });
+        
+        // Initial detection
+        detectAtPosition(currentOffset.x, currentOffset.y);
+    </script>
+</body>
+</html> 

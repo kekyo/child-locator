@@ -1,7 +1,7 @@
 {
   "name": "child-locator",
   "private": false,
-  "version": "0.2.1",
+  "version": "0.3.5",
   "type": "module",
   "description": "A React Hook for locating child components at specific coordinates within a parent container",
   "keywords": [
@@ -50,10 +50,8 @@
     "test": "npm run test:root && npm run test:e2e",
     "test:root": "npm run lint && vitest --run",
     "test:ui": "npm run lint && vitest --ui",
-    "test:e2e": "npm run lint && playwright test adhoc_test/ --reporter=list",
-    "test:e2e:ui": "npm run lint && playwright test --ui adhoc_test/",
-    "test:e2e:headed": "npm run lint && playwright test --headed adhoc_test/",
-    "test:e2e:simple": "npm run lint && playwright test adhoc_test/simple-center-test.spec.ts --reporter=list"
+    "test:e2e": "npm run lint && playwright test test_e2e/ --reporter=list",
+    "test:e2e:ui": "npm run lint && playwright test --ui test_e2e/"
   },
   "peerDependencies": {
     "react": ">=16.8.0",
@@ -82,5 +80,8 @@
     "vite": "^6.3.5",
     "vite-plugin-checker": "^0.9.3",
     "vitest": "^3.1.4"
+  },
+  "dependencies": {
+    "react-attractor": "^0.5.0"
   }
 }

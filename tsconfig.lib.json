@@ -9,13 +9,16 @@
     "rootDir": "./src",
     "moduleResolution": "node",
     "allowImportingTsExtensions": false,
-    "verbatimModuleSyntax": false
+    "verbatimModuleSyntax": false,
+    "allowSyntheticDefaultImports": true
   },
   "include": [
     "src/index.ts",
     "src/types/**/*",
     "src/hooks/**/*",
-    "src/utils/**/*"
+    "src/utils/**/*",
+    "src/providers/**/*",
+    "src/hocs/**/*"
   ],
   "exclude": [
     "src/**/*.test.ts",

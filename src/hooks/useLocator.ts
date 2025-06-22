@@ -1,21 +1,148 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react'
+import { useCallback, useEffect, useRef, useMemo } from 'react'
 import type { RefObject } from 'react'
-import type { DetectedComponent, UseLocatorOptions, UseLocatorReturn } from '../types/useLocator'
-import { findElementAtOffset, getComponentFromElement } from '../utils/componentRegistry'
+import { useChildLocatorContext } from './useChildLocatorContext'
+import type { DetectedComponent, UseLocatorOptions, OffsetCoordinates } from '../types/useLocator'
 import { InvisibleElementManager } from '../utils/invisibleElementManager'
+
+/**
+ * Find element at specified offset coordinates
+ */
+function findElementAtOffset(
+  container: HTMLElement,
+  offset: OffsetCoordinates,
+  scrollContainer?: RefObject<HTMLElement | null> | null
+): HTMLElement | null {
+  const manager = new InvisibleElementManager()
+  manager.setContainer(container)
+  
+  try {
+    const pixelOffset = manager.getPositionFromCSSUnits(offset.x, offset.y)
+    if (!pixelOffset) {
+      return null
+    }
+    
+    let targetX: number, targetY: number
+    
+    // Calculate absolute viewport coordinates considering scroll container
+    if (scrollContainer?.current) {
+      const containerRect = scrollContainer.current.getBoundingClientRect()
+      const scrollLeft = scrollContainer.current.scrollLeft
+      const scrollTop = scrollContainer.current.scrollTop
+      
+      // Calculate coordinates relative to scroll container content
+      targetX = containerRect.left + pixelOffset.x - scrollLeft
+      targetY = containerRect.top + pixelOffset.y - scrollTop
+    } else {
+      const containerRect = container.getBoundingClientRect()
+      targetX = containerRect.left + pixelOffset.x
+      targetY = containerRect.top + pixelOffset.y
+    }
+    
+    // Check if coordinates are within viewport bounds
+    const isInViewport = targetX >= 0 && targetX <= window.innerWidth && 
+                        targetY >= 0 && targetY <= window.innerHeight
+    
+    let element: Element | null = null
+    
+    if (isInViewport) {
+      // Primary method: Use document.elementFromPoint for viewport coordinates
+      element = document.elementFromPoint(targetX, targetY)
+      
+      // Find the closest direct child element of the container
+      while (element && element !== container) {
+        if (InvisibleElementManager.isLocatorInvisibleElement(element)) {
+          element = element.parentElement
+          continue
+        }
+        
+        if (element.parentElement === container) {
+          return element as HTMLElement
+        }
+        
+        element = element.parentElement
+      }
+    }
+    
+    // Fallback method: Use bounds checking for out-of-viewport coordinates
+    if (!element) {
+      return findElementByBounds(container, targetX, targetY)
+    }
+    
+    return null
+  } finally {
+    manager.cleanup()
+  }
+}
+
+/**
+ * Fallback element detection using getBoundingClientRect
+ */
+function findElementByBounds(
+  container: HTMLElement,
+  targetX: number,
+  targetY: number
+): HTMLElement | null {
+  const children = InvisibleElementManager.getVisibleChildren(container)
+  
+  const candidates: Array<{
+    element: HTMLElement
+    distance: number
+    bounds: DOMRect
+  }> = []
+  
+  children.forEach(child => {
+    const rect = child.getBoundingClientRect()
+    
+    const isWithinBounds = 
+      targetX >= rect.left && targetX <= rect.right &&
+      targetY >= rect.top && targetY <= rect.bottom
+    
+    if (isWithinBounds) {
+      const centerX = rect.left + rect.width / 2
+      const centerY = rect.top + rect.height / 2
+      const distance = Math.sqrt(
+        Math.pow(centerX - targetX, 2) + 
+        Math.pow(centerY - targetY, 2)
+      )
+      
+      candidates.push({
+        element: child as HTMLElement,
+        distance,
+        bounds: rect
+      })
+    }
+  })
+  
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => {
+      const distanceDiff = a.distance - b.distance
+      if (Math.abs(distanceDiff) < 0.1) {
+        const aIndex = Array.from(container.children).indexOf(a.element)
+        const bIndex = Array.from(container.children).indexOf(b.element)
+        return bIndex - aIndex
+      }
+      return distanceDiff
+    })
+    
+    return candidates[0].element
+  }
+  
+  return null
+}
 
 /**
  * A Hook that monitors child components of a specified component and
  * identifies child components at XY coordinate offset positions
+ * Uses react-attractor for component registration and retrieval
  */
 export const useLocator = (
   refTarget: RefObject<HTMLElement | null>,
   options: UseLocatorOptions
-): UseLocatorReturn => {
+): void => {
   const { offset, onDetect, enabled = true, scrollContainerRef } = options
   
-  const [detected, setDetected] = useState<DetectedComponent | null>(null)
-  const [childrenCount, setChildrenCount] = useState(0)
+  // Get child locator context for component registration/retrieval
+  const { getTether } = useChildLocatorContext()
   
   // Maintain Observer references for cleanup
   const observersRef = useRef<{
@@ -81,6 +208,25 @@ export const useLocator = (
     }
   }, [])
 
+  // Function to get component from element using tether context
+  const getComponentFromElement = useCallback((element: HTMLElement) => {
+    const tetherInfo = getTether(element)
+    if (tetherInfo) {
+      // Create a React element from the tether information
+      return {
+        type: 'div', // Default type, could be extracted from tether metadata
+        props: {
+          ...tetherInfo.props,
+          // Include metadata in a special property for easy access
+          _tetherMetadata: tetherInfo.metadata
+        },
+        key: null,
+        ref: null,
+      }
+    }
+    return undefined
+  }, [getTether])
+
   // Stabilize onDetect callback to prevent unnecessary effect re-runs
   const stableOnDetect = useCallback((component: DetectedComponent) => {
     // Hash the result to detect meaningful changes and avoid redundant calls
@@ -96,7 +242,6 @@ export const useLocator = (
     }
     
     lastResultRef.current = hash
-    setDetected(component)
     currentValuesRef.current.onDetect(component)
   }, [])
   
@@ -141,16 +286,6 @@ export const useLocator = (
           targetY = containerRect.top + pixelOffset.y
         }
         
-        // Update children count (excluding invisible locator elements)
-        const childrenCount = InvisibleElementManager.getVisibleChildren(refTarget.current).length
-        
-        setChildrenCount(prevCount => {
-          if (prevCount !== childrenCount) {
-            return childrenCount
-          }
-          return prevCount
-        })
-        
         let detectedComponent: DetectedComponent
         
         if (!targetElement) {
@@ -186,7 +321,7 @@ export const useLocator = (
         processingRef.current = false
       }
     }, 0)
-  }, [stableOnDetect, convertToPixels, refTarget, effectiveScrollContainer])
+  }, [stableOnDetect, convertToPixels, refTarget, effectiveScrollContainer, getComponentFromElement])
   
   // Observer setup for monitoring DOM changes and layout updates
   useEffect(() => {
@@ -196,119 +331,87 @@ export const useLocator = (
     
     const targetElement = refTarget.current
     const observers = observersRef.current
+    const currentScrollContainer = effectiveScrollContainer?.current
     
     // Clean up existing observers before setting up new ones
-    observers.mutation?.disconnect()
-    observers.resize?.disconnect()
-    observers.intersection?.disconnect()
+    if (observers.mutation) {
+      observers.mutation.disconnect()
+    }
+    if (observers.resize) {
+      observers.resize.disconnect()
+    }
+    if (observers.intersection) {
+      observers.intersection.disconnect()
+    }
     
-    // MutationObserver: Monitor child element changes
+    // Create MutationObserver for DOM tree changes
     observers.mutation = new MutationObserver(() => {
       detectComponent()
     })
+    
     observers.mutation.observe(targetElement, {
       childList: true,
-      subtree: false, // Only monitor direct children
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['style', 'class'],
     })
     
-    // ResizeObserver: Monitor container size changes
-    observers.resize = new ResizeObserver((entries) => {
-      // Process only when size actually changes to avoid unnecessary calls
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect
-        
-        if (width > 0 && height > 0) {
-          detectComponent()
-          break
+    // Create ResizeObserver for size changes
+    if (window.ResizeObserver) {
+      observers.resize = new ResizeObserver(() => {
+        detectComponent()
+      })
+      observers.resize.observe(targetElement)
+      
+      // Also observe all child elements for size changes
+      const childElements = targetElement.querySelectorAll('*')
+      childElements.forEach(child => {
+        if (child instanceof HTMLElement) {
+          observers.resize!.observe(child)
         }
-      }
-    })
-    observers.resize.observe(targetElement)
+      })
+    }
     
-    // IntersectionObserver: Monitor visibility changes
-    observers.intersection = new IntersectionObserver(() => {
+    // Setup scroll event listeners for scroll containers
+    const handleScroll = () => {
       detectComponent()
-    }, {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0,
-    })
-    observers.intersection.observe(targetElement)
+    }
+    
+    if (currentScrollContainer) {
+      currentScrollContainer.addEventListener('scroll', handleScroll)
+    } else {
+      window.addEventListener('scroll', handleScroll)
+    }
+    
+    // Setup resize event listener for window
+    const handleResize = () => {
+      detectComponent()
+    }
+    
+    window.addEventListener('resize', handleResize)
     
     // Initial detection
     detectComponent()
     
     // Cleanup function
     return () => {
-      observers.mutation?.disconnect()
-      observers.resize?.disconnect()
-      observers.intersection?.disconnect()
-    }
-  }, [enabled, detectComponent, refTarget])
-  
-  // Handle offset changes with immediate re-detection
-  useEffect(() => {
-    if (enabled) {
-      detectComponent()
-    }
-  }, [offset, enabled, detectComponent])
-  
-  // Monitor scroll events with throttling for performance
-  useEffect(() => {
-    if (!enabled || !refTarget.current) return
-    
-    let timeoutId: NodeJS.Timeout | null = null
-    
-    // Throttled scroll handler to avoid excessive detection calls
-    const handleScroll = () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId)
+      if (observers.mutation) {
+        observers.mutation.disconnect()
+      }
+      if (observers.resize) {
+        observers.resize.disconnect()
+      }
+      if (observers.intersection) {
+        observers.intersection.disconnect()
       }
       
-      timeoutId = setTimeout(() => {
-        detectComponent()
-      }, 150) // 150ms throttle
-    }
-    
-    const targetElement = refTarget.current
-    const currentScrollContainer = effectiveScrollContainer?.current
-    const scrollElement = currentScrollContainer || targetElement
-    
-    // Window scroll events (only if no scroll container is specified)
-    if (!currentScrollContainer) {
-      window.addEventListener('scroll', handleScroll, { passive: true })
-    }
-    
-    // Container scroll events
-    scrollElement.addEventListener('scroll', handleScroll, { passive: true })
-    
-    return () => {
-      if (!currentScrollContainer) {
+      if (currentScrollContainer) {
+        currentScrollContainer.removeEventListener('scroll', handleScroll)
+      } else {
         window.removeEventListener('scroll', handleScroll)
       }
-      scrollElement.removeEventListener('scroll', handleScroll)
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-      }
-    }
-  }, [enabled, scrollContainerRef, detectComponent, refTarget, effectiveScrollContainer])
-  
-  // Handle window resize events
-  useEffect(() => {
-    const handleResize = () => {
-      detectComponent()
-    }
-    
-    window.addEventListener('resize', handleResize, { passive: true })
-    
-    return () => {
+      
       window.removeEventListener('resize', handleResize)
     }
-  }, [detectComponent])
-  
-  return {
-    detected,
-    childrenCount,
-    isEnabled: enabled,
-  }
+  }, [detectComponent, enabled, refTarget, effectiveScrollContainer])
 } 

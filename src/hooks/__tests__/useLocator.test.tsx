@@ -1,31 +1,34 @@
 /// <reference types="vitest/globals" />
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
-import { useLocator } from '../useLocator'
-import { useComponentRef } from '../useComponentRef'
+import { useLocator, ChildLocatorProvider, withChildLocator } from '../../index'
 import type { DetectedComponent, CSSUnitValue } from '../../types/useLocator'
 
-// Test component
-const TestChild = ({ id, height = 100 }: { id: number; height?: number }) => {
-  const component = <TestChild id={id} height={height} />
-  const [, setRef] = useComponentRef<HTMLDivElement>(component)
-  
-  return (
-    <div
-      ref={setRef}
-      data-testid={`child-${id}`}
-      style={{
-        width: '100px',
-        height: `${height}px`,
-        backgroundColor: '#f0f0f0',
-        border: '1px solid #ccc',
-        margin: '5px',
-      }}
-    >
-      Child {id}
-    </div>
-  )
-}
+// Test child component using withChildLocator
+const BaseTestChild = React.forwardRef<HTMLDivElement, { id: number; height?: number }>(
+  ({ id, height = 100 }, ref) => {
+    return (
+      <div
+        ref={ref}
+        data-testid={`child-${id}`}
+        style={{
+          width: '100px',
+          height: `${height}px`,
+          backgroundColor: '#f0f0f0',
+          border: '1px solid #ccc',
+          margin: '5px',
+        }}
+      >
+        Child {id}
+      </div>
+    )
+  }
+)
+
+BaseTestChild.displayName = 'BaseTestChild'
+
+// Wrap with tether to enable component tracking
+const TestChild = withChildLocator(BaseTestChild)
 
 const TestContainer = ({
   offset,
@@ -37,10 +40,14 @@ const TestContainer = ({
   children: React.ReactNode
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
+  const [detected, setDetected] = useState<DetectedComponent | null>(null)
   
-  const { detected, childrenCount, isEnabled } = useLocator(containerRef, {
+  useLocator(containerRef, {
     offset,
-    onDetect,
+    onDetect: (detectedComponent) => {
+      setDetected(detectedComponent)
+      onDetect(detectedComponent)
+    },
     enabled: true,
   })
   
@@ -48,12 +55,6 @@ const TestContainer = ({
     <div>
       <div data-testid="detected-info">
         Detected: {detected ? 'yes' : 'no'}
-      </div>
-      <div data-testid="children-count">
-        Children: {childrenCount}
-      </div>
-      <div data-testid="enabled-status">
-        Enabled: {isEnabled ? 'yes' : 'no'}
       </div>
       <div
         ref={containerRef}
@@ -77,10 +78,14 @@ const TestScrollContainer = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [detected, setDetected] = useState<DetectedComponent | null>(null)
   
-  const { detected, childrenCount, isEnabled } = useLocator(containerRef, {
+  useLocator(containerRef, {
     offset,
-    onDetect,
+    onDetect: (detectedComponent) => {
+      setDetected(detectedComponent)
+      onDetect(detectedComponent)
+    },
     enabled: true,
     scrollContainerRef: scrollContainerRef,
   })
@@ -89,12 +94,6 @@ const TestScrollContainer = ({
     <div>
       <div data-testid="detected-info">
         Detected: {detected ? 'yes' : 'no'}
-      </div>
-      <div data-testid="children-count">
-        Children: {childrenCount}
-      </div>
-      <div data-testid="enabled-status">
-        Enabled: {isEnabled ? 'yes' : 'no'}
       </div>
       <div data-testid="header" style={{ height: '50px', backgroundColor: '#ccc', flexShrink: 0 }}>
         Header (Fixed)
@@ -120,7 +119,7 @@ const TestScrollContainer = ({
   )
 }
 
-describe('useLocator', () => {
+describe('useLocator with ChildLocatorProvider', () => {
   let detectedComponents: (DetectedComponent | null)[] = []
   
   const mockOnDetect = (detected: DetectedComponent | null) => {
@@ -130,29 +129,16 @@ describe('useLocator', () => {
   beforeEach(() => {
     detectedComponents = []
   })
-  
-  it('should initialize with correct default values', async () => {
-    render(
-      <TestContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
-        <TestChild id={1} />
-        <TestChild id={2} />
-      </TestContainer>
-    )
-    
-    await waitFor(() => {
-      expect(screen.getByTestId('children-count')).toHaveTextContent('Children: 2')
-    })
-    
-    expect(screen.getByTestId('enabled-status')).toHaveTextContent('Enabled: yes')
-  })
-  
+
   it('should detect component at XY offset', async () => {
     render(
-      <TestContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
-        <TestChild id={1} height={80} />
-        <TestChild id={2} height={80} />
-        <TestChild id={3} height={80} />
-      </TestContainer>
+      <ChildLocatorProvider>
+        <TestContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
+          <TestChild id={1} height={80} tetherMetadata={{ childId: 1 }} />
+          <TestChild id={2} height={80} tetherMetadata={{ childId: 2 }} />
+          <TestChild id={3} height={80} tetherMetadata={{ childId: 3 }} />
+        </TestContainer>
+      </ChildLocatorProvider>
     )
     
     await waitFor(() => {
@@ -167,16 +153,14 @@ describe('useLocator', () => {
   
   it('should detect components correctly', async () => {
     render(
-      <TestContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
-        <TestChild id={1} height={80} />
-        <TestChild id={2} height={80} />
-        <TestChild id={3} height={80} />
-      </TestContainer>
+      <ChildLocatorProvider>
+        <TestContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
+          <TestChild id={1} height={80} tetherMetadata={{ childId: 1 }} />
+          <TestChild id={2} height={80} tetherMetadata={{ childId: 2 }} />
+          <TestChild id={3} height={80} tetherMetadata={{ childId: 3 }} />
+        </TestContainer>
+      </ChildLocatorProvider>
     )
-    
-    await waitFor(() => {
-      expect(screen.getByTestId('children-count')).toHaveTextContent('Children: 3')
-    })
     
     // Verify that detection callback is called
     await waitFor(() => {
@@ -189,16 +173,14 @@ describe('useLocator', () => {
     expect(lastDetected?.element).toBeInstanceOf(HTMLElement)
   })
   
-    it('should handle empty container', async () => {
+  it('should handle empty container', async () => {
     render(
-      <TestContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
-        {null}
-      </TestContainer>
+      <ChildLocatorProvider>
+        <TestContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
+          {null}
+        </TestContainer>
+      </ChildLocatorProvider>
     )
-
-    await waitFor(() => {
-      expect(screen.getByTestId('children-count')).toHaveTextContent('Children: 0')
-    })
 
     // For empty containers, DetectedComponent with no child elements is returned
     await waitFor(() => {
@@ -208,10 +190,12 @@ describe('useLocator', () => {
 
   it('should calculate distance from offset correctly', async () => {
     render(
-      <TestContainer offset={{ x: 100, y: 100 }} onDetect={mockOnDetect}>
-        <TestChild id={1} height={50} />
-        <TestChild id={2} height={50} />
-      </TestContainer>
+      <ChildLocatorProvider>
+        <TestContainer offset={{ x: 100, y: 100 }} onDetect={mockOnDetect}>
+          <TestChild id={1} height={50} />
+          <TestChild id={2} height={50} />
+        </TestContainer>
+      </ChildLocatorProvider>
     )
     
     await waitFor(() => {
@@ -225,17 +209,14 @@ describe('useLocator', () => {
 
   it('should support CSS unit strings for offset', async () => {
     render(
-      <TestContainer offset={{ x: '50%', y: '25%' }} onDetect={mockOnDetect}>
-        <TestChild id={1} height={80} />
-        <TestChild id={2} height={80} />
-      </TestContainer>
+      <ChildLocatorProvider>
+        <TestContainer offset={{ x: '50%', y: '25%' }} onDetect={mockOnDetect}>
+          <TestChild id={1} height={80} />
+          <TestChild id={2} height={80} />
+        </TestContainer>
+      </ChildLocatorProvider>
     )
     
-    await waitFor(() => {
-      expect(screen.getByTestId('children-count')).toHaveTextContent('Children: 2')
-    })
-    
-    // Verify that detection works with CSS units
     await waitFor(() => {
       expect(detectedComponents.length).toBeGreaterThan(0)
     })
@@ -247,17 +228,14 @@ describe('useLocator', () => {
 
   it('should support mixed units (number and string)', async () => {
     render(
-      <TestContainer offset={{ x: 100, y: '50%' }} onDetect={mockOnDetect}>
-        <TestChild id={1} height={80} />
-        <TestChild id={2} height={80} />
-      </TestContainer>
+      <ChildLocatorProvider>
+        <TestContainer offset={{ x: 100, y: '50%' }} onDetect={mockOnDetect}>
+          <TestChild id={1} height={80} />
+          <TestChild id={2} height={80} />
+        </TestContainer>
+      </ChildLocatorProvider>
     )
     
-    await waitFor(() => {
-      expect(screen.getByTestId('children-count')).toHaveTextContent('Children: 2')
-    })
-    
-    // Verify that detection works with mixed units
     await waitFor(() => {
       expect(detectedComponents.length).toBeGreaterThan(0)
     })
@@ -267,41 +245,17 @@ describe('useLocator', () => {
     expect(typeof lastDetected?.distanceFromOffset).toBe('number')
   })
 
-  it('should exclude invisible locator elements from children count', async () => {
-    render(
-      <TestContainer offset={{ x: '10%', y: '10%' }} onDetect={mockOnDetect}>
-        <TestChild id={1} />
-        <TestChild id={2} />
-      </TestContainer>
-    )
-    
-    await waitFor(() => {
-      expect(screen.getByTestId('children-count')).toHaveTextContent('Children: 2')
-    })
-    
-    // Verify that invisible elements are not included in child element count
-    const container = screen.getByTestId('container')
-    const allChildren = container.children.length
-    const visibleChildren = parseInt(screen.getByTestId('children-count').textContent?.split(': ')[1] || '0')
-    
-    // When invisible elements exist, the total child element count should be greater than the visible element count
-    expect(allChildren).toBeGreaterThanOrEqual(visibleChildren)
-  })
-
   it('should work with scroll container for scroll-relative coordinate calculation', async () => {
     render(
-      <TestScrollContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
-        <TestChild id={1} height={80} />
-        <TestChild id={2} height={80} />
-        <TestChild id={3} height={80} />
-      </TestScrollContainer>
+      <ChildLocatorProvider>
+        <TestScrollContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
+          <TestChild id={1} height={80} />
+          <TestChild id={2} height={80} />
+          <TestChild id={3} height={80} />
+        </TestScrollContainer>
+      </ChildLocatorProvider>
     )
     
-    await waitFor(() => {
-      expect(screen.getByTestId('children-count')).toHaveTextContent('Children: 3')
-    })
-    
-    // Verify that detection works with scroll container
     await waitFor(() => {
       expect(detectedComponents.length).toBeGreaterThan(0)
     })
@@ -319,5 +273,77 @@ describe('useLocator', () => {
     
     // Detection should still work after scrolling
     expect(detectedComponents.length).toBeGreaterThan(0)
+  })
+
+  it('should retrieve component metadata from tethered elements', async () => {
+    const specificMetadata = { 
+      componentType: 'test-component', 
+      uniqueId: 'test-123',
+      category: 'interaction' 
+    }
+    
+    render(
+      <ChildLocatorProvider>
+        <TestContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
+          <TestChild 
+            id={1} 
+            height={100}
+            tetherMetadata={specificMetadata}
+          />
+        </TestContainer>
+      </ChildLocatorProvider>
+    )
+    
+    await waitFor(() => {
+      expect(detectedComponents.length).toBeGreaterThan(0)
+    })
+    
+    // Find a detection with tether information  
+    const detectedWithChildLocator = detectedComponents.find(d => d?.component)
+    expect(detectedWithChildLocator).toBeDefined()
+    expect(detectedWithChildLocator?.component).toBeDefined()
+    
+    // Verify props are accessible
+    const props = detectedWithChildLocator?.component?.props as { 
+      id: number; 
+      height: number; 
+      _tetherMetadata: { 
+        componentType: string; 
+        uniqueId: string; 
+        category: string 
+      } 
+    }
+    expect(props).toBeDefined()
+    expect(props.id).toBe(1)
+    expect(props.height).toBe(100)
+    
+    // Verify that tether metadata is accessible
+    expect(props._tetherMetadata).toBeDefined()
+    expect(props._tetherMetadata.componentType).toBe('test-component')
+    expect(props._tetherMetadata.uniqueId).toBe('test-123')
+    expect(props._tetherMetadata.category).toBe('interaction')
+    
+    // This confirms that react-attractor integration is working correctly
+    // and we can identify components by their metadata, not just DOM attributes
+  })
+
+  it('should provide bounds information for detected elements', async () => {
+    render(
+      <ChildLocatorProvider>
+        <TestContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
+          <TestChild id={1} height={80} />
+        </TestContainer>
+      </ChildLocatorProvider>
+    )
+    
+    await waitFor(() => {
+      expect(detectedComponents.length).toBeGreaterThan(0)
+    })
+    
+    const detected = detectedComponents.find(d => d !== null && d.element)
+    expect(detected).toBeDefined()
+    expect(detected?.bounds).toBeDefined()
+    expect(detected?.bounds?.width).toBeGreaterThan(0)
+    expect(detected?.bounds?.height).toBeGreaterThan(0)
   })
 }) 

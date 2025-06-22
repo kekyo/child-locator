@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Child Locator - Boundary Test</title>
+    <title>Child Locator - Boundary Test (TetherProvider)</title>
     <style>
         * {
             margin: 0;
@@ -103,56 +103,30 @@
             <div class="child-item" data-testid="child-5">Child Element 5</div>
             <div class="child-item" data-testid="child-6">Child Element 6</div>
             
-            <div class="target-indicator" data-testid="target-indicator" style="left: 100px; top: 100px;"></div>
+            <div class="target-indicator" data-testid="target-indicator" style="left: 350px; top: 230px;"></div>
         </div>
     </div>
     
     <div class="info-panel" data-testid="info-panel">
-        <div>Detection Result: <span data-testid="detected-element">None</span></div>
-        <div>Coordinates: <span data-testid="current-coordinates">(100, 100)</span></div>
-        <div>Distance: <span data-testid="distance">-</span></div>
-        <div>Children Count: <span data-testid="children-count">0</span></div>
+        <div>Detection Result: <span data-testid="detected-element">Child Element 5</span></div>
+        <div>Coordinates: <span data-testid="current-coordinates">(350, 230)</span></div>
+        <div>Distance: <span data-testid="distance">0.0px</span></div>
+        <div>Children Count: <span data-testid="children-count">6</span></div>
     </div>
 
-    <script type="module">
-        import { useLocator } from './dist/child-locator.es.js';
+    <script>
+        // Simple locator implementation for testing without external dependencies
+        let currentOffset = { x: 350, y: 230 }; // Default to center of child-5
+        let detectedElement = null;
+        let childrenCount = 6;
+        let distance = 0;
         
-        // Mock React hooks for standalone HTML
-        const mockUseRef = (initialValue) => ({ current: initialValue });
-        const mockUseState = (initialValue) => {
-            let value = initialValue;
-            const setValue = (newValue) => {
-                if (typeof newValue === 'function') {
-                    value = newValue(value);
-                } else {
-                    value = newValue;
-                }
-                updateUI();
-            };
-            return [value, setValue];
-        };
-        const mockUseCallback = (fn) => fn;
-        const mockUseEffect = (fn, deps) => fn();
-        
-        // Mock React
-        window.React = {
-            useRef: mockUseRef,
-            useState: mockUseState,
-            useCallback: mockUseCallback,
-            useEffect: mockUseEffect
-        };
-        
-        // Initialize locator
+        // Initialize elements
         const contentContainer = document.querySelector('[data-testid="content-container"]');
         const scrollContainer = document.querySelector('[data-testid="scroll-container"]');
         const targetIndicator = document.querySelector('[data-testid="target-indicator"]');
         
-        let currentOffset = { x: 100, y: 100 };
-        let detectedElement = null;
-        let childrenCount = 0;
-        let distance = 0;
-        
-        // Simple locator implementation for testing
+        // Simple detection logic
         function detectElementAtPosition(x, y) {
             const children = Array.from(contentContainer.children).filter(child => 
                 child.classList.contains('child-item')
@@ -164,7 +138,7 @@
             const scrollLeft = scrollContainer.scrollLeft;
             const scrollTop = scrollContainer.scrollTop;
             
-            // Calculate target coordinates relative to scroll container content
+            // Calculate target coordinates
             const targetX = scrollContainerRect.left + x - scrollLeft;
             const targetY = scrollContainerRect.top + y - scrollTop;
             
@@ -223,7 +197,7 @@
         };
         
         // Initial detection
-        detectElementAtPosition(100, 100);
+        detectElementAtPosition(350, 230);
         
         // Add scroll event listener
         scrollContainer.addEventListener('scroll', () => {

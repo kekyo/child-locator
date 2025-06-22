@@ -7,6 +7,13 @@ import type { ReactElement, RefObject } from 'react'
 export type CSSUnitValue = number | string
 
 /**
+ * Metadata that can be associated with child components for tracking
+ */
+export interface ChildLocatorMetadata {
+  [key: string]: unknown
+}
+
+/**
  * Information about the detected child component
  */
 export interface DetectedComponent {
@@ -42,16 +49,4 @@ export interface UseLocatorOptions {
   enabled?: boolean
   /** Optional scroll container reference for scroll-container-relative coordinate calculation */
   scrollContainerRef?: RefObject<HTMLElement | null>
-}
-
-/**
- * Return value of useLocator hook
- */
-export interface UseLocatorReturn {
-  /** Currently detected component */
-  detected: DetectedComponent | null
-  /** Number of child elements */
-  childrenCount: number
-  /** Whether monitoring is enabled */
-  isEnabled: boolean
 } 
