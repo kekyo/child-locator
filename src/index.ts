@@ -1,12 +1,17 @@
-// Main implementation using react-attractor
+// Main child-locator API
 export { useLocator } from './hooks/useLocator'
 
-// Re-export react-attractor components for user convenience
-export { TetherProvider, useTetherContext, withTether } from 'react-attractor'
+// Child-locator specific provider and HOC
+export { ChildLocatorProvider } from './providers/ChildLocatorProvider'
+export { withChildLocator } from './hocs/withChildLocator'
 
 // Types
 export type {
   DetectedComponent,
   OffsetCoordinates,
   UseLocatorOptions,
+  ChildLocatorMetadata,
 } from './types/useLocator'
+
+export type { WithChildLocatorProps } from './hocs/withChildLocator'
+export type { ChildLocatorProviderProps } from './providers/ChildLocatorProvider'

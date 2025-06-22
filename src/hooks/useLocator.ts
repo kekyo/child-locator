@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useMemo } from 'react'
 import type { RefObject } from 'react'
-import { useTetherContext } from 'react-attractor'
+import { useChildLocatorContext } from './useChildLocatorContext'
 import type { DetectedComponent, UseLocatorOptions, OffsetCoordinates } from '../types/useLocator'
 import { InvisibleElementManager } from '../utils/invisibleElementManager'
 
@@ -141,8 +141,8 @@ export const useLocator = (
 ): void => {
   const { offset, onDetect, enabled = true, scrollContainerRef } = options
   
-  // Get tether context for component registration/retrieval
-  const { getTether } = useTetherContext()
+  // Get child locator context for component registration/retrieval
+  const { getTether } = useChildLocatorContext()
   
   // Maintain Observer references for cleanup
   const observersRef = useRef<{

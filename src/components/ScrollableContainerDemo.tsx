@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react'
-import { useLocator, TetherProvider, withTether } from '../'
+import { useLocator, ChildLocatorProvider, withChildLocator } from '../'
 import type { DetectedComponent } from '../types/useLocator'
 
 // Tethered component for tracking
@@ -30,7 +30,7 @@ const BaseMockComponent = ({
   )
 }
 
-const MockComponent = withTether(BaseMockComponent)
+const MockComponent = withChildLocator(BaseMockComponent)
 
 const ScrollableContainerDemo: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -49,9 +49,9 @@ const ScrollableContainerDemo: React.FC = () => {
   })
 
   return (
-    <TetherProvider>
+    <ChildLocatorProvider>
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-        <h2>Scrollable Container Demo - TetherProvider Implementation</h2>
+        <h2>Scrollable Container Demo - ChildLocatorProvider Implementation</h2>
         
         <div style={{ marginBottom: '20px' }}>
           <h3>Controls</h3>
@@ -177,13 +177,13 @@ const ScrollableContainerDemo: React.FC = () => {
               <li>Red dot shows target coordinates</li>
               <li>Scroll the container to test detection</li>
               <li>Change X/Y offset values to move target</li>
-              <li>Uses TetherProvider for component tracking</li>
+              <li>Uses ChildLocatorProvider for component tracking</li>
               <li>Distance shows how far the detected element center is from the target</li>
             </ul>
           </div>
         </div>
       </div>
-    </TetherProvider>
+    </ChildLocatorProvider>
   )
 }
 

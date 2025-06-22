@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { useLocator, withTether } from './index'
+import { useLocator, withChildLocator } from './index'
 import type { DetectedComponent } from './types/useLocator'
 
 interface GridItem {
@@ -45,7 +45,7 @@ const BaseGridItem = React.forwardRef<HTMLDivElement, {
 
 BaseGridItem.displayName = 'BaseGridItem'
 
-const GridItem = withTether(BaseGridItem)
+const GridItem = withChildLocator(BaseGridItem)
 
 function App() {
   const [mouseOffset, setMouseOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 })

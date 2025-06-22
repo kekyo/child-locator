@@ -7,6 +7,13 @@ import type { ReactElement, RefObject } from 'react'
 export type CSSUnitValue = number | string
 
 /**
+ * Metadata that can be associated with child components for tracking
+ */
+export interface ChildLocatorMetadata {
+  [key: string]: unknown
+}
+
+/**
  * Information about the detected child component
  */
 export interface DetectedComponent {

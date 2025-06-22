@@ -1,10 +1,10 @@
 /// <reference types="vitest/globals" />
 import React, { useRef, useState } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
-import { useLocator, TetherProvider, withTether } from '../../index'
+import { useLocator, ChildLocatorProvider, withChildLocator } from '../../index'
 import type { DetectedComponent, CSSUnitValue } from '../../types/useLocator'
 
-// Test child component using withTether
+// Test child component using withChildLocator
 const BaseTestChild = React.forwardRef<HTMLDivElement, { id: number; height?: number }>(
   ({ id, height = 100 }, ref) => {
     return (
@@ -28,7 +28,7 @@ const BaseTestChild = React.forwardRef<HTMLDivElement, { id: number; height?: nu
 BaseTestChild.displayName = 'BaseTestChild'
 
 // Wrap with tether to enable component tracking
-const TestChild = withTether(BaseTestChild)
+const TestChild = withChildLocator(BaseTestChild)
 
 const TestContainer = ({
   offset,
@@ -119,7 +119,7 @@ const TestScrollContainer = ({
   )
 }
 
-describe('useLocator with TetherProvider', () => {
+describe('useLocator with ChildLocatorProvider', () => {
   let detectedComponents: (DetectedComponent | null)[] = []
   
   const mockOnDetect = (detected: DetectedComponent | null) => {
@@ -132,13 +132,13 @@ describe('useLocator with TetherProvider', () => {
 
   it('should detect component at XY offset', async () => {
     render(
-      <TetherProvider>
+      <ChildLocatorProvider>
         <TestContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
           <TestChild id={1} height={80} tetherMetadata={{ childId: 1 }} />
           <TestChild id={2} height={80} tetherMetadata={{ childId: 2 }} />
           <TestChild id={3} height={80} tetherMetadata={{ childId: 3 }} />
         </TestContainer>
-      </TetherProvider>
+      </ChildLocatorProvider>
     )
     
     await waitFor(() => {
@@ -153,13 +153,13 @@ describe('useLocator with TetherProvider', () => {
   
   it('should detect components correctly', async () => {
     render(
-      <TetherProvider>
+      <ChildLocatorProvider>
         <TestContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
           <TestChild id={1} height={80} tetherMetadata={{ childId: 1 }} />
           <TestChild id={2} height={80} tetherMetadata={{ childId: 2 }} />
           <TestChild id={3} height={80} tetherMetadata={{ childId: 3 }} />
         </TestContainer>
-      </TetherProvider>
+      </ChildLocatorProvider>
     )
     
     // Verify that detection callback is called
@@ -175,11 +175,11 @@ describe('useLocator with TetherProvider', () => {
   
   it('should handle empty container', async () => {
     render(
-      <TetherProvider>
+      <ChildLocatorProvider>
         <TestContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
           {null}
         </TestContainer>
-      </TetherProvider>
+      </ChildLocatorProvider>
     )
 
     // For empty containers, DetectedComponent with no child elements is returned
@@ -190,12 +190,12 @@ describe('useLocator with TetherProvider', () => {
 
   it('should calculate distance from offset correctly', async () => {
     render(
-      <TetherProvider>
+      <ChildLocatorProvider>
         <TestContainer offset={{ x: 100, y: 100 }} onDetect={mockOnDetect}>
           <TestChild id={1} height={50} />
           <TestChild id={2} height={50} />
         </TestContainer>
-      </TetherProvider>
+      </ChildLocatorProvider>
     )
     
     await waitFor(() => {
@@ -209,12 +209,12 @@ describe('useLocator with TetherProvider', () => {
 
   it('should support CSS unit strings for offset', async () => {
     render(
-      <TetherProvider>
+      <ChildLocatorProvider>
         <TestContainer offset={{ x: '50%', y: '25%' }} onDetect={mockOnDetect}>
           <TestChild id={1} height={80} />
           <TestChild id={2} height={80} />
         </TestContainer>
-      </TetherProvider>
+      </ChildLocatorProvider>
     )
     
     await waitFor(() => {
@@ -228,12 +228,12 @@ describe('useLocator with TetherProvider', () => {
 
   it('should support mixed units (number and string)', async () => {
     render(
-      <TetherProvider>
+      <ChildLocatorProvider>
         <TestContainer offset={{ x: 100, y: '50%' }} onDetect={mockOnDetect}>
           <TestChild id={1} height={80} />
           <TestChild id={2} height={80} />
         </TestContainer>
-      </TetherProvider>
+      </ChildLocatorProvider>
     )
     
     await waitFor(() => {
@@ -247,13 +247,13 @@ describe('useLocator with TetherProvider', () => {
 
   it('should work with scroll container for scroll-relative coordinate calculation', async () => {
     render(
-      <TetherProvider>
+      <ChildLocatorProvider>
         <TestScrollContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
           <TestChild id={1} height={80} />
           <TestChild id={2} height={80} />
           <TestChild id={3} height={80} />
         </TestScrollContainer>
-      </TetherProvider>
+      </ChildLocatorProvider>
     )
     
     await waitFor(() => {
@@ -283,7 +283,7 @@ describe('useLocator with TetherProvider', () => {
     }
     
     render(
-      <TetherProvider>
+      <ChildLocatorProvider>
         <TestContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
           <TestChild 
             id={1} 
@@ -291,7 +291,7 @@ describe('useLocator with TetherProvider', () => {
             tetherMetadata={specificMetadata}
           />
         </TestContainer>
-      </TetherProvider>
+      </ChildLocatorProvider>
     )
     
     await waitFor(() => {
@@ -299,12 +299,12 @@ describe('useLocator with TetherProvider', () => {
     })
     
     // Find a detection with tether information  
-    const detectedWithTether = detectedComponents.find(d => d?.component)
-    expect(detectedWithTether).toBeDefined()
-    expect(detectedWithTether?.component).toBeDefined()
+    const detectedWithChildLocator = detectedComponents.find(d => d?.component)
+    expect(detectedWithChildLocator).toBeDefined()
+    expect(detectedWithChildLocator?.component).toBeDefined()
     
     // Verify props are accessible
-    const props = detectedWithTether?.component?.props as { 
+    const props = detectedWithChildLocator?.component?.props as { 
       id: number; 
       height: number; 
       _tetherMetadata: { 
@@ -329,11 +329,11 @@ describe('useLocator with TetherProvider', () => {
 
   it('should provide bounds information for detected elements', async () => {
     render(
-      <TetherProvider>
+      <ChildLocatorProvider>
         <TestContainer offset={{ x: 50, y: 50 }} onDetect={mockOnDetect}>
           <TestChild id={1} height={80} />
         </TestContainer>
-      </TetherProvider>
+      </ChildLocatorProvider>
     )
     
     await waitFor(() => {

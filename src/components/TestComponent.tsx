@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react'
-import { useLocator, TetherProvider, withTether } from '../'
+import { useLocator, ChildLocatorProvider, withChildLocator } from '../'
 import type { DetectedComponent } from '../types/useLocator'
 
 // Tethered component for tracking
@@ -43,7 +43,7 @@ const BaseChildComponent = ({
   )
 }
 
-const ChildComponent = withTether(BaseChildComponent)
+const ChildComponent = withChildLocator(BaseChildComponent)
 
 const TestComponent: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -60,9 +60,9 @@ const TestComponent: React.FC = () => {
   })
 
   return (
-    <TetherProvider>
+    <ChildLocatorProvider>
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-        <h2>Test Component - TetherProvider Implementation</h2>
+        <h2>Test Component - ChildLocatorProvider Implementation</h2>
         
         <div style={{ marginBottom: '20px' }}>
           <h3>Controls</h3>
@@ -185,12 +185,12 @@ const TestComponent: React.FC = () => {
           <ul>
             <li>Red dot shows target coordinates</li>
             <li>Change X/Y offset values to move target</li>
-            <li>Uses TetherProvider for component tracking</li>
+            <li>Uses ChildLocatorProvider for component tracking</li>
             <li>Distance shows how far the detected element center is from the target</li>
           </ul>
         </div>
       </div>
-    </TetherProvider>
+    </ChildLocatorProvider>
   )
 }
 
