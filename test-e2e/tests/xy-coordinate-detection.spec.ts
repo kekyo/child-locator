@@ -125,7 +125,7 @@ test.describe('Child Locator - XY Coordinate Detection', () => {
 
   test('should handle edge coordinates and boundary cases', async ({ page }) => {
     console.log('=== Edge Coordinates Test ===')
-    
+
     // Get container bounds
     const container = page.locator('div[style*="overflow: auto"]').first()
     const containerBox = await container.boundingBox()
@@ -150,30 +150,38 @@ test.describe('Child Locator - XY Coordinate Detection', () => {
         y: containerBox.y + 200 
       }
     ]
-    
+
     for (const pos of edgePositions) {
       console.log(`\n--- Testing ${pos.name} at (${pos.x.toFixed(0)}, ${pos.y.toFixed(0)}) ---`)
       console.log('Expected: Should detect closest item')
       
       await page.mouse.move(pos.x, pos.y)
       await page.waitForTimeout(300)
-      
+
       const detectedText = await page.locator('p:has-text("Detected Item:")').textContent()
       const boundsText = await page.locator('p:has-text("Element Bounds:")').textContent()
-      
+
       console.log(`Detection: ${detectedText}`)
       console.log(`Bounds: ${boundsText}`)
-      
+
       // More flexible validation - accept any reasonable detection
       if (detectedText) {
-        expect(detectedText).toMatch(/Detected Item:\s*(Item-\d+-\d+|Unknown Element|None)/)
-        
-        // If bounds are available, validate format
-        if (boundsText && boundsText !== 'Element Bounds: Not available') {
-          expect(boundsText).toMatch(/Element Bounds:\s*\d+x\d+\s*at\s*\(\d+,\s*\d+\)/)
+        expect(detectedText).toMatch(
+          /Detected Item:\s*(Item-\d+-\d+|Nested-Item-\d+|Unknown Element|None)/
+        )
+
+        const shouldValidateBounds =
+          boundsText &&
+          boundsText !== 'Element Bounds: Not available' &&
+          !/Element Bounds:\s*\(None\)/.test(boundsText)
+
+        if (shouldValidateBounds) {
+          expect(boundsText).toMatch(
+            /Element Bounds:\s*\d+x\d+\s*at\s*\(\d+,\s*\d+\)/
+          )
         }
       }
-      
+
       console.log(`✅ ${pos.name} handled correctly`)
     }
   })

@@ -422,9 +422,9 @@ const GridComponent: React.FC = () => {
 
 ### Limitations
 
-- Direct Children Only: The child-locator can only detect direct child components of the component referenced by containerRef.
-  For example, grandchild components of nested descendant components cannot be detected.
-
+- Trackable Descendants: Elements must be wrapped with `withChildLocator` to participate in detection.
+  The hook walks through non-trackable ancestors automatically, so deeply nested trackable elements can be detected as long as they are visible.
+- Visibility Requirement: Hidden elements (`display: none`, `visibility: hidden`, zero-sized) or items scrolled outside of the viewport/scroll container are ignored until they become visible again.
 - Viewport Coordinate Constraint: When target coordinates are outside the browser viewport, detection behavior may differ for overlapping elements:
   - Within Viewport: Uses `document.elementFromPoint()` which respects CSS stacking context and z-index properly
   - Outside Viewport: Falls back to bounds-based detection using `getBoundingClientRect()`, which may return different results for overlapping elements due to different selection criteria (distance-based vs stacking context-based)
