@@ -7,9 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "tsc -b && eslint .",
-    "test": "npm run lint",
-    "test:e2e": "npm run lint && playwright test test_e2e/ --reporter=list",
-    "test:e2e:ui": "npm run lint && playwright test --ui test_e2e/"
+    "test": "npm run lint"
   },
   "dependencies": {
     "child-locator": "^0.3.5",
@@ -18,7 +16,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
-    "@playwright/test": "^1.52.0",
     "@types/node": "^22.15.21",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",

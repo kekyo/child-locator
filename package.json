@@ -22,7 +22,8 @@
   "workspaces": {
     "packages": [
       "child-locator",
-      "demo"
+      "demo",
+      "test-e2e"
     ]
   },
   "scripts": {
