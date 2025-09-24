@@ -21,7 +21,7 @@
     "dev": "echo \"Nothing dev script in child-locator project.\"",
     "build": "vite build",
     "test": "npm run build && vitest run",
-    "pack": "screw-up pack --pack-destination ../artifacts"
+    "pack": "npm run build && screw-up pack --pack-destination ../artifacts"
   },
   "dependencies": {
     "react": ">=16.0.0",
