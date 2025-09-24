@@ -40,10 +40,8 @@
   "scripts": {
     "dev": "npm run lint && vite",
     "build": "npm run lint && vite build",
-    "build:lib": "npm run version:update && npm run build && npm run build:types",
+    "build:lib": "npm run build && npm run build:types",
     "build:types": "npm run lint && tsc --project tsconfig.lib.json",
-    "version:update": "rv --npm .",
-    "version:show": "rv .",
     "prepublishOnly": "npm run build:lib",
     "lint": "tsc -b && eslint .",
     "preview": "vite preview",
