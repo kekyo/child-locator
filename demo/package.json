@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "echo \"Nothing demo script in test-e2e project.\""
+    "test": "echo \"Nothing test script in demo project.\"",
+    "pack": "echo \"Nothing pack script in demo project.\""
   },
   "dependencies": {
     "child-locator": "*",

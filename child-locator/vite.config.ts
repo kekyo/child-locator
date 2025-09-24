@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
 import { resolve } from 'path';
 import prettierMax from 'prettier-max';
+import screwUp from 'screw-up';
 
 export default defineConfig({
   plugins: [
@@ -12,6 +13,7 @@ export default defineConfig({
       insertTypesEntry: true,
     }),
     prettierMax(),
+    screwUp(),
   ],
   build: {
     lib: {

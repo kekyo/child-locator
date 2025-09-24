@@ -9,7 +9,8 @@
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
-    "test:headed": "playwright test --headed"
+    "test:headed": "playwright test --headed",
+    "pack": "echo \"Nothing pack script in test-e2e project.\""
   },
   "devDependencies": {
     "@playwright/test": ">=1.52.0",
