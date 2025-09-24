@@ -43,10 +43,4 @@ export default defineConfig({
     sourcemap: true,
     minify: false,
   },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./tests/setup.ts'],
-    exclude: ['**/node_modules/**'],
-  },
 });
