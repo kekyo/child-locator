@@ -1,21 +1,10 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'
-import checker from 'vite-plugin-checker'
+import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [
-    react(),
-    checker({
-      typescript: {
-        tsconfigPath: 'tsconfig.app.json'
-      },
-      overlay: {
-        initialIsOpen: false,
-        position: 'tl',
-        badgeStyle: 'display: none;'
-      }
-    })
+    react()
   ],
   resolve: {
     alias: [

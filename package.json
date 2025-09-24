@@ -28,7 +28,6 @@
   },
   "scripts": {
     "build": "npm run build --workspaces",
-    "lint": "npm run lint --workspaces",
     "test": "npm run test --workspaces",
     "dev": "npm run dev --workspaces"
   }
