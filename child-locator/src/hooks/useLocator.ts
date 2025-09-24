@@ -234,6 +234,8 @@ export const useLocator = (
   });
   currentValuesRef.current = { offset, enabled, onDetect, scrollContainerRef };
 
+  const windowScrollRef = useRef<HTMLElement | null>(null);
+
   // Determine effective scroll container with automatic fallback to containerRef if scrollable
   const effectiveScrollContainer =
     useMemo((): RefObject<HTMLElement | null> | null => {
@@ -255,7 +257,21 @@ export const useLocator = (
         }
       }
 
-      // No scroll container (use window scrolling)
+      // No scroll container configured explicitly; try global scrolling element
+      if (typeof document !== 'undefined') {
+        const scrollElement =
+          (document.scrollingElement as HTMLElement | null) ??
+          document.documentElement ??
+          document.body ??
+          null;
+
+        if (scrollElement) {
+          windowScrollRef.current = scrollElement;
+          return windowScrollRef;
+        }
+      }
+
+      // No scroll container could be resolved (fallback to window events)
       return null;
     }, [scrollContainerRef, refTarget]);
 
@@ -329,7 +345,10 @@ export const useLocator = (
   const detectComponent = useCallback(() => {
     const { offset: currentOffset, enabled: currentEnabled } =
       currentValuesRef.current;
-    const currentScrollContainer = effectiveScrollContainer;
+    const currentScrollContainerRef = effectiveScrollContainer;
+    const isWindowScrollContainer =
+      currentScrollContainerRef === windowScrollRef;
+    const currentScrollContainer = currentScrollContainerRef?.current ?? null;
 
     // Skip if already processing or conditions not met
     if (processingRef.current || !refTarget.current || !currentEnabled) {
@@ -351,32 +370,29 @@ export const useLocator = (
           refTarget.current,
           currentOffset,
           getTether,
-          currentScrollContainer
+          currentScrollContainerRef && !isWindowScrollContainer
+            ? currentScrollContainerRef
+            : null
         );
 
         // Calculate target coordinates for distance measurement
         let targetX: number, targetY: number;
-        if (currentScrollContainer?.current) {
-          const containerRect =
-            currentScrollContainer.current.getBoundingClientRect();
-          const scrollLeft = currentScrollContainer.current.scrollLeft;
-          const scrollTop = currentScrollContainer.current.scrollTop;
-          const pixelOffset = convertToPixels(
-            refTarget.current,
-            currentOffset.x,
-            currentOffset.y
-          );
+        const pixelOffset = convertToPixels(
+          refTarget.current,
+          currentOffset.x,
+          currentOffset.y
+        );
+
+        if (currentScrollContainer && !isWindowScrollContainer) {
+          const containerRect = currentScrollContainer.getBoundingClientRect();
+          const scrollLeft = currentScrollContainer.scrollLeft;
+          const scrollTop = currentScrollContainer.scrollTop;
 
           // Calculate coordinates relative to scroll container content
           targetX = containerRect.left + pixelOffset.x - scrollLeft;
           targetY = containerRect.top + pixelOffset.y - scrollTop;
         } else {
           const containerRect = refTarget.current.getBoundingClientRect();
-          const pixelOffset = convertToPixels(
-            refTarget.current,
-            currentOffset.x,
-            currentOffset.y
-          );
           targetX = containerRect.left + pixelOffset.x;
           targetY = containerRect.top + pixelOffset.y;
         }
@@ -432,7 +448,11 @@ export const useLocator = (
 
     const targetElement = refTarget.current;
     const observers = observersRef.current;
-    const currentScrollContainer = effectiveScrollContainer?.current;
+    const currentScrollContainerRef = effectiveScrollContainer;
+    const currentScrollContainer = currentScrollContainerRef?.current ?? null;
+    const isWindowScrollContainer =
+      currentScrollContainerRef === windowScrollRef &&
+      typeof window !== 'undefined';
 
     // Clean up existing observers before setting up new ones
     if (observers.mutation) {
@@ -478,9 +498,9 @@ export const useLocator = (
       detectComponent();
     };
 
-    if (currentScrollContainer) {
+    if (currentScrollContainer && !isWindowScrollContainer) {
       currentScrollContainer.addEventListener('scroll', handleScroll);
-    } else {
+    } else if (typeof window !== 'undefined') {
       window.addEventListener('scroll', handleScroll);
     }
 
@@ -506,13 +526,19 @@ export const useLocator = (
         observers.intersection.disconnect();
       }
 
-      if (currentScrollContainer) {
+      if (currentScrollContainer && !isWindowScrollContainer) {
         currentScrollContainer.removeEventListener('scroll', handleScroll);
-      } else {
+      } else if (typeof window !== 'undefined') {
         window.removeEventListener('scroll', handleScroll);
       }
 
       window.removeEventListener('resize', handleResize);
     };
-  }, [detectComponent, enabled, refTarget, effectiveScrollContainer]);
+  }, [
+    detectComponent,
+    enabled,
+    refTarget,
+    effectiveScrollContainer,
+    windowScrollRef,
+  ]);
 };
