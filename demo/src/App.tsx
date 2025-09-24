@@ -50,6 +50,43 @@ BaseGridItem.displayName = 'BaseGridItem';
 
 const GridItem = withChildLocator(BaseGridItem);
 
+const BaseNestedItem = React.forwardRef<
+  HTMLDivElement,
+  {
+    id: string;
+    label: string;
+  }
+>(({ id, label }, ref) => {
+  return (
+    <div
+      ref={ref}
+      data-testid={id}
+      style={{
+        width: '140px',
+        height: '90px',
+        backgroundColor: '#fde6f4',
+        border: '2px solid #ad1457',
+        borderRadius: '10px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '6px',
+        fontWeight: 600,
+        color: '#ad1457',
+        boxShadow: '0 3px 8px rgba(173, 20, 87, 0.2)',
+      }}
+    >
+      <span>{label}</span>
+      <span style={{ fontSize: '12px' }}>Nested Target</span>
+    </div>
+  );
+});
+
+BaseNestedItem.displayName = 'BaseNestedItem';
+
+const NestedItem = withChildLocator(BaseNestedItem);
+
 function App() {
   const [mouseOffset, setMouseOffset] = useState<{ x: number; y: number }>({
     x: 0,
@@ -209,7 +246,7 @@ function App() {
           ref={innerContainerRef}
           style={{
             width: '600px',
-            height: '1500px',
+            height: '1800px',
             position: 'relative',
           }}
         >
@@ -248,6 +285,46 @@ function App() {
               </div>
             </GridItem>
           ))}
+
+          <div
+            data-testid="nested-wrapper-outer"
+            style={{
+              position: 'absolute',
+              left: '40px',
+              top: '1550px',
+              width: '240px',
+              padding: '18px',
+              backgroundColor: '#fef6fb',
+              borderRadius: '18px',
+              border: '2px solid rgba(173, 20, 87, 0.2)',
+              boxShadow: '0 10px 18px rgba(173, 20, 87, 0.08)',
+            }}
+          >
+            <div
+              data-testid="nested-wrapper-middle"
+              style={{
+                padding: '18px',
+                background:
+                  'linear-gradient(135deg, rgba(173, 20, 87, 0.12), rgba(173, 20, 87, 0.05))',
+                borderRadius: '14px',
+                border: '2px solid rgba(173, 20, 87, 0.25)',
+              }}
+            >
+              <div
+                data-testid="nested-wrapper-inner"
+                style={{
+                  padding: '12px',
+                  backgroundColor: '#ffffff',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(173, 20, 87, 0.2)',
+                  display: 'flex',
+                  justifyContent: 'center',
+                }}
+              >
+                <NestedItem id="Nested-Item-1" label="Nested Item 1" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

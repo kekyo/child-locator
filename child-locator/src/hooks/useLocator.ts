@@ -13,12 +13,40 @@ import type {
 } from '../types/useLocator';
 import { InvisibleElementManager } from '../utils/invisibleElementManager';
 
+type TetherInfo = {
+  props?: Record<string, unknown>;
+  metadata?: unknown;
+};
+
+type GetTetherFn = (element: HTMLElement) => TetherInfo | undefined;
+
+function isElementVisible(element: HTMLElement): boolean {
+  const rect = element.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) {
+    return false;
+  }
+
+  const style = window.getComputedStyle(element);
+  if (style.display === 'none' || style.visibility === 'hidden') {
+    return false;
+  }
+
+  const intersectsViewport =
+    rect.bottom > 0 &&
+    rect.right > 0 &&
+    rect.left < window.innerWidth &&
+    rect.top < window.innerHeight;
+
+  return intersectsViewport;
+}
+
 /**
  * Find element at specified offset coordinates
  */
 function findElementAtOffset(
   container: HTMLElement,
   offset: OffsetCoordinates,
+  getTether: GetTetherFn,
   scrollContainer?: RefObject<HTMLElement | null> | null
 ): HTMLElement | undefined {
   const manager = new InvisibleElementManager();
@@ -54,33 +82,43 @@ function findElementAtOffset(
       targetY >= 0 &&
       targetY <= window.innerHeight;
 
-    let element: Element | null = null;
-
     if (isInViewport) {
-      // Primary method: Use document.elementFromPoint for viewport coordinates
-      element = document.elementFromPoint(targetX, targetY);
+      const elementsAtPoint =
+        typeof document.elementsFromPoint === 'function'
+          ? document.elementsFromPoint(targetX, targetY)
+          : (() => {
+              const single = document.elementFromPoint(targetX, targetY);
+              return single ? [single] : [];
+            })();
 
-      // Find the closest direct child element of the container
-      while (element && element !== container) {
-        if (InvisibleElementManager.isLocatorInvisibleElement(element)) {
-          element = element.parentElement;
+      for (const candidate of elementsAtPoint) {
+        if (!(candidate instanceof HTMLElement)) {
           continue;
         }
 
-        if (element.parentElement === container) {
-          return element as HTMLElement;
+        if (!container.contains(candidate)) {
+          continue;
         }
 
-        element = element.parentElement;
+        let element: HTMLElement | null = candidate;
+
+        while (element && element !== container) {
+          if (InvisibleElementManager.isLocatorInvisibleElement(element)) {
+            element = element.parentElement;
+            continue;
+          }
+
+          if (getTether(element) && isElementVisible(element)) {
+            return element;
+          }
+
+          element = element.parentElement;
+        }
       }
     }
 
     // Fallback method: Use bounds checking for out-of-viewport coordinates
-    if (!element) {
-      return findElementByBounds(container, targetX, targetY);
-    }
-
-    return undefined;
+    return findElementByBounds(container, targetX, targetY, getTether);
   } finally {
     manager.cleanup();
   }
@@ -92,9 +130,10 @@ function findElementAtOffset(
 function findElementByBounds(
   container: HTMLElement,
   targetX: number,
-  targetY: number
+  targetY: number,
+  getTether: GetTetherFn
 ): HTMLElement | undefined {
-  const children = InvisibleElementManager.getVisibleChildren(container);
+  const descendants = container.querySelectorAll('*');
 
   const candidates: Array<{
     element: HTMLElement;
@@ -102,8 +141,24 @@ function findElementByBounds(
     bounds: DOMRect;
   }> = [];
 
-  children.forEach((child) => {
-    const rect = child.getBoundingClientRect();
+  descendants.forEach((node) => {
+    if (!(node instanceof HTMLElement)) {
+      return;
+    }
+
+    if (InvisibleElementManager.isLocatorInvisibleElement(node)) {
+      return;
+    }
+
+    if (!getTether(node)) {
+      return;
+    }
+
+    if (!isElementVisible(node)) {
+      return;
+    }
+
+    const rect = node.getBoundingClientRect();
 
     const isWithinBounds =
       targetX >= rect.left &&
@@ -119,7 +174,7 @@ function findElementByBounds(
       );
 
       candidates.push({
-        element: child as HTMLElement,
+        element: node,
         distance,
         bounds: rect,
       });
@@ -295,6 +350,7 @@ export const useLocator = (
         const targetElement = findElementAtOffset(
           refTarget.current,
           currentOffset,
+          getTether,
           currentScrollContainer
         );
 
