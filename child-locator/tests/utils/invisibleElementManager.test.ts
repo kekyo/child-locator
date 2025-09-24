@@ -1,5 +1,5 @@
 /// <reference types="vitest/globals" />
-import { InvisibleElementManager } from '../invisibleElementManager'
+import { InvisibleElementManager } from '../../src/utils/invisibleElementManager'
 
 describe('InvisibleElementManager', () => {
   let container: HTMLElement

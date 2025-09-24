@@ -1,8 +1,8 @@
 /// <reference types="vitest/globals" />
 import React, { useRef, useState } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
-import { useLocator, ChildLocatorProvider, withChildLocator } from '../../index'
-import type { DetectedComponent, CSSUnitValue } from '../../types/useLocator'
+import { useLocator, ChildLocatorProvider, withChildLocator } from '../../src/index'
+import type { DetectedComponent, CSSUnitValue } from '../../src/types/useLocator'
 
 // Test child component using withChildLocator
 const BaseTestChild = React.forwardRef<HTMLDivElement, { id: number; height?: number }>(
