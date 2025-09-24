@@ -21,9 +21,7 @@
   ],
   "scripts": {
     "dev": "echo \"Nothing dev script in child-locator project.\"",
-    "build": "tsc -b && vite build",
-    "build:lib": "npm run build && npm run build:types",
-    "build:types": "npm run build && tsc --project tsconfig.lib.json",
+    "build": "vite build",
     "test": "npm run build && vitest run"
   },
   "dependencies": {
@@ -45,6 +43,7 @@
     "react-dom": ">=19.0.0",
     "typescript": ">=5.0.0",
     "vite": ">=6.0.0",
+    "vite-plugin-dts": ">=4.5.4",
     "vitest": ">=3.0.0"
   }
 }

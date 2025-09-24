@@ -11,14 +11,14 @@ function findElementAtOffset(
   container: HTMLElement,
   offset: OffsetCoordinates,
   scrollContainer?: RefObject<HTMLElement | null> | null
-): HTMLElement | null {
+): HTMLElement | undefined {
   const manager = new InvisibleElementManager()
   manager.setContainer(container)
   
   try {
     const pixelOffset = manager.getPositionFromCSSUnits(offset.x, offset.y)
     if (!pixelOffset) {
-      return null
+      return undefined
     }
     
     let targetX: number, targetY: number
@@ -68,7 +68,7 @@ function findElementAtOffset(
       return findElementByBounds(container, targetX, targetY)
     }
     
-    return null
+    return undefined
   } finally {
     manager.cleanup()
   }
@@ -81,7 +81,7 @@ function findElementByBounds(
   container: HTMLElement,
   targetX: number,
   targetY: number
-): HTMLElement | null {
+): HTMLElement | undefined {
   const children = InvisibleElementManager.getVisibleChildren(container)
   
   const candidates: Array<{
@@ -124,10 +124,10 @@ function findElementByBounds(
       return distanceDiff
     })
     
-    return candidates[0].element
+    return candidates[0]?.element
   }
   
-  return null
+  return undefined;
 }
 
 /**
