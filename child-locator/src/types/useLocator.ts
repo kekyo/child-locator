@@ -1,16 +1,16 @@
-import type { ReactElement, RefObject } from 'react'
+import type { ReactElement, RefObject } from 'react';
 
 /**
  * CSS unit value type that supports both numeric (px) and string (%, vw, vh, rem, em) values
  * Similar to React.CSSProperties values but specifically for coordinate positioning
  */
-export type CSSUnitValue = number | string
+export type CSSUnitValue = number | string;
 
 /**
  * Metadata that can be associated with child components for tracking
  */
 export interface ChildLocatorMetadata {
-  [key: string]: unknown
+  [key: string]: unknown;
 }
 
 /**
@@ -18,13 +18,13 @@ export interface ChildLocatorMetadata {
  */
 export interface DetectedComponent {
   /** Detected HTML element */
-  element?: HTMLElement
+  element?: HTMLElement;
   /** Detected React component */
-  component?: ReactElement
+  component?: ReactElement;
   /** Element's bounding information */
-  bounds?: DOMRect
+  bounds?: DOMRect;
   /** Distance from the specified offset coordinates */
-  distanceFromOffset: number
+  distanceFromOffset: number;
 }
 
 /**
@@ -32,9 +32,9 @@ export interface DetectedComponent {
  */
 export interface OffsetCoordinates {
   /** X coordinate - supports px (number), %, vw, vh, rem, em (string) */
-  x: CSSUnitValue
+  x: CSSUnitValue;
   /** Y coordinate - supports px (number), %, vw, vh, rem, em (string) */
-  y: CSSUnitValue
+  y: CSSUnitValue;
 }
 
 /**
@@ -42,11 +42,11 @@ export interface OffsetCoordinates {
  */
 export interface UseLocatorOptions {
   /** Target offset coordinates for detection */
-  offset: OffsetCoordinates
+  offset: OffsetCoordinates;
   /** Callback for detection results */
-  onDetect: (detected: DetectedComponent) => void
+  onDetect: (detected: DetectedComponent) => void;
   /** Enable/disable monitoring */
-  enabled?: boolean
+  enabled?: boolean;
   /** Optional scroll container reference for scroll-container-relative coordinate calculation */
-  scrollContainerRef?: RefObject<HTMLElement | null>
-} 
+  scrollContainerRef?: RefObject<HTMLElement | null>;
+}

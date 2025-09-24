@@ -1,4 +1,4 @@
-import { useTetherContext } from 'react-attractor'
+import { useTetherContext } from 'react-attractor';
 
 /**
  * Internal hook for accessing child locator context
@@ -6,5 +6,5 @@ import { useTetherContext } from 'react-attractor'
  * @internal
  */
 export const useChildLocatorContext = () => {
-  return useTetherContext()
-} 
+  return useTetherContext();
+};

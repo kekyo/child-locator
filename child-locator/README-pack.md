@@ -29,16 +29,16 @@ npm install child-locator
 First, wrap your app with `ChildLocatorProvider`:
 
 ```tsx
-import React from 'react'
-import { ChildLocatorProvider } from 'child-locator'
-import App from './App'
+import React from 'react';
+import { ChildLocatorProvider } from 'child-locator';
+import App from './App';
 
 function Root() {
   return (
     <ChildLocatorProvider>
       <App />
     </ChildLocatorProvider>
-  )
+  );
 }
 ```
 
@@ -47,32 +47,38 @@ function Root() {
 Use `withChildLocator` to make components trackable:
 
 ```tsx
-import React from 'react'
-import { withChildLocator } from 'child-locator'
-import type { WithChildLocatorProps } from 'child-locator'
+import React from 'react';
+import { withChildLocator } from 'child-locator';
+import type { WithChildLocatorProps } from 'child-locator';
 
 // Base component
-const BaseChildItem = ({ id, children }: { 
-  id: number; 
-  children: React.ReactNode 
+const BaseChildItem = ({
+  id,
+  children,
+}: {
+  id: number;
+  children: React.ReactNode;
 }) => {
   return (
-    <div data-testid={`child-${id}`} style={{ 
-      position: 'absolute',
-      left: id * 100,
-      top: id * 80,
-      width: 80,
-      height: 60,
-      border: '1px solid #ccc',
-      backgroundColor: '#f9f9f9'
-    }}>
+    <div
+      data-testid={`child-${id}`}
+      style={{
+        position: 'absolute',
+        left: id * 100,
+        top: id * 80,
+        width: 80,
+        height: 60,
+        border: '1px solid #ccc',
+        backgroundColor: '#f9f9f9',
+      }}
+    >
       {children}
     </div>
-  )
-}
+  );
+};
 
 // Make it trackable with child-locator
-const ChildItem = withChildLocator(BaseChildItem)
+const ChildItem = withChildLocator(BaseChildItem);
 ```
 
 ### 3. Use Detection Hook
@@ -80,53 +86,50 @@ const ChildItem = withChildLocator(BaseChildItem)
 Use `useLocator` to detect components at specific coordinates:
 
 ```tsx
-import React, { useRef } from 'react'
-import { useLocator } from 'child-locator'
-import type { DetectedComponent } from 'child-locator'
+import React, { useRef } from 'react';
+import { useLocator } from 'child-locator';
+import type { DetectedComponent } from 'child-locator';
 
 const ParentComponent = () => {
-  const containerRef = useRef<HTMLDivElement>(null)
-  
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useLocator(containerRef, {
     offset: { x: '50%', y: '30%' }, // CSS units supported: px, %, vw, vh, rem, em
     onDetect: (component: DetectedComponent) => {
       if (component.element) {
-        console.log('Detected element:', component.element)
-        console.log('Distance from target:', component.distanceFromOffset)
-        console.log('Component metadata:', component.component?.props._tetherMetadata)
+        console.log('Detected element:', component.element);
+        console.log('Distance from target:', component.distanceFromOffset);
+        console.log(
+          'Component metadata:',
+          component.component?.props._tetherMetadata
+        );
       } else {
-        console.log('No child elements at target coordinates')
+        console.log('No child elements at target coordinates');
       }
     },
-    enabled: true
-  })
-  
+    enabled: true,
+  });
+
   return (
-    <div ref={containerRef} style={{ width: 400, height: 300, position: 'relative' }}>
-      <ChildItem 
-        id={1} 
-        tetherMetadata={{ type: 'grid-item', row: 1, col: 1 }}
-      >
+    <div
+      ref={containerRef}
+      style={{ width: 400, height: 300, position: 'relative' }}
+    >
+      <ChildItem id={1} tetherMetadata={{ type: 'grid-item', row: 1, col: 1 }}>
         Item 1
       </ChildItem>
-      <ChildItem 
-        id={2} 
-        tetherMetadata={{ type: 'grid-item', row: 1, col: 2 }}
-      >
+      <ChildItem id={2} tetherMetadata={{ type: 'grid-item', row: 1, col: 2 }}>
         Item 2
       </ChildItem>
-      <ChildItem 
-        id={3} 
-        tetherMetadata={{ type: 'grid-item', row: 2, col: 1 }}
-      >
+      <ChildItem id={3} tetherMetadata={{ type: 'grid-item', row: 2, col: 1 }}>
         Item 3
       </ChildItem>
     </div>
-  )
-}
+  );
+};
 ```
 
-----
+---
 
 ## Documentation
 

@@ -1,8 +1,12 @@
-import { useCallback, useEffect, useRef, useMemo } from 'react'
-import type { RefObject } from 'react'
-import { useChildLocatorContext } from './useChildLocatorContext'
-import type { DetectedComponent, UseLocatorOptions, OffsetCoordinates } from '../types/useLocator'
-import { InvisibleElementManager } from '../utils/invisibleElementManager'
+import { useCallback, useEffect, useRef, useMemo } from 'react';
+import type { RefObject } from 'react';
+import { useChildLocatorContext } from './useChildLocatorContext';
+import type {
+  DetectedComponent,
+  UseLocatorOptions,
+  OffsetCoordinates,
+} from '../types/useLocator';
+import { InvisibleElementManager } from '../utils/invisibleElementManager';
 
 /**
  * Find element at specified offset coordinates
@@ -12,65 +16,68 @@ function findElementAtOffset(
   offset: OffsetCoordinates,
   scrollContainer?: RefObject<HTMLElement | null> | null
 ): HTMLElement | undefined {
-  const manager = new InvisibleElementManager()
-  manager.setContainer(container)
-  
+  const manager = new InvisibleElementManager();
+  manager.setContainer(container);
+
   try {
-    const pixelOffset = manager.getPositionFromCSSUnits(offset.x, offset.y)
+    const pixelOffset = manager.getPositionFromCSSUnits(offset.x, offset.y);
     if (!pixelOffset) {
-      return undefined
+      return undefined;
     }
-    
-    let targetX: number, targetY: number
-    
+
+    let targetX: number, targetY: number;
+
     // Calculate absolute viewport coordinates considering scroll container
     if (scrollContainer?.current) {
-      const containerRect = scrollContainer.current.getBoundingClientRect()
-      const scrollLeft = scrollContainer.current.scrollLeft
-      const scrollTop = scrollContainer.current.scrollTop
-      
+      const containerRect = scrollContainer.current.getBoundingClientRect();
+      const scrollLeft = scrollContainer.current.scrollLeft;
+      const scrollTop = scrollContainer.current.scrollTop;
+
       // Calculate coordinates relative to scroll container content
-      targetX = containerRect.left + pixelOffset.x - scrollLeft
-      targetY = containerRect.top + pixelOffset.y - scrollTop
+      targetX = containerRect.left + pixelOffset.x - scrollLeft;
+      targetY = containerRect.top + pixelOffset.y - scrollTop;
     } else {
-      const containerRect = container.getBoundingClientRect()
-      targetX = containerRect.left + pixelOffset.x
-      targetY = containerRect.top + pixelOffset.y
+      const containerRect = container.getBoundingClientRect();
+      targetX = containerRect.left + pixelOffset.x;
+      targetY = containerRect.top + pixelOffset.y;
     }
-    
+
     // Check if coordinates are within viewport bounds
-    const isInViewport = targetX >= 0 && targetX <= window.innerWidth && 
-                        targetY >= 0 && targetY <= window.innerHeight
-    
-    let element: Element | null = null
-    
+    const isInViewport =
+      targetX >= 0 &&
+      targetX <= window.innerWidth &&
+      targetY >= 0 &&
+      targetY <= window.innerHeight;
+
+    let element: Element | null = null;
+
     if (isInViewport) {
       // Primary method: Use document.elementFromPoint for viewport coordinates
-      element = document.elementFromPoint(targetX, targetY)
-      
+      element = document.elementFromPoint(targetX, targetY);
+
       // Find the closest direct child element of the container
       while (element && element !== container) {
         if (InvisibleElementManager.isLocatorInvisibleElement(element)) {
-          element = element.parentElement
-          continue
+          element = element.parentElement;
+          continue;
         }
-        
+
         if (element.parentElement === container) {
-          return element as HTMLElement
+          return element as HTMLElement;
         }
-        
-        element = element.parentElement
+
+        element = element.parentElement;
       }
     }
-    
+
     // Fallback method: Use bounds checking for out-of-viewport coordinates
     if (!element) {
-      return findElementByBounds(container, targetX, targetY)
+      return findElementByBounds(container, targetX, targetY);
     }
-    
-    return undefined
+
+    return undefined;
   } finally {
-    manager.cleanup()
+    manager.cleanup();
   }
 }
 
@@ -82,51 +89,52 @@ function findElementByBounds(
   targetX: number,
   targetY: number
 ): HTMLElement | undefined {
-  const children = InvisibleElementManager.getVisibleChildren(container)
-  
+  const children = InvisibleElementManager.getVisibleChildren(container);
+
   const candidates: Array<{
-    element: HTMLElement
-    distance: number
-    bounds: DOMRect
-  }> = []
-  
-  children.forEach(child => {
-    const rect = child.getBoundingClientRect()
-    
-    const isWithinBounds = 
-      targetX >= rect.left && targetX <= rect.right &&
-      targetY >= rect.top && targetY <= rect.bottom
-    
+    element: HTMLElement;
+    distance: number;
+    bounds: DOMRect;
+  }> = [];
+
+  children.forEach((child) => {
+    const rect = child.getBoundingClientRect();
+
+    const isWithinBounds =
+      targetX >= rect.left &&
+      targetX <= rect.right &&
+      targetY >= rect.top &&
+      targetY <= rect.bottom;
+
     if (isWithinBounds) {
-      const centerX = rect.left + rect.width / 2
-      const centerY = rect.top + rect.height / 2
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
       const distance = Math.sqrt(
-        Math.pow(centerX - targetX, 2) + 
-        Math.pow(centerY - targetY, 2)
-      )
-      
+        Math.pow(centerX - targetX, 2) + Math.pow(centerY - targetY, 2)
+      );
+
       candidates.push({
         element: child as HTMLElement,
         distance,
-        bounds: rect
-      })
+        bounds: rect,
+      });
     }
-  })
-  
+  });
+
   if (candidates.length > 0) {
     candidates.sort((a, b) => {
-      const distanceDiff = a.distance - b.distance
+      const distanceDiff = a.distance - b.distance;
       if (Math.abs(distanceDiff) < 0.1) {
-        const aIndex = Array.from(container.children).indexOf(a.element)
-        const bIndex = Array.from(container.children).indexOf(b.element)
-        return bIndex - aIndex
+        const aIndex = Array.from(container.children).indexOf(a.element);
+        const bIndex = Array.from(container.children).indexOf(b.element);
+        return bIndex - aIndex;
       }
-      return distanceDiff
-    })
-    
-    return candidates[0]?.element
+      return distanceDiff;
+    });
+
+    return candidates[0]?.element;
   }
-  
+
   return undefined;
 }
 
@@ -139,93 +147,105 @@ export const useLocator = (
   refTarget: RefObject<HTMLElement | null>,
   options: UseLocatorOptions
 ): void => {
-  const { offset, onDetect, enabled = true, scrollContainerRef } = options
-  
+  const { offset, onDetect, enabled = true, scrollContainerRef } = options;
+
   // Get child locator context for component registration/retrieval
-  const { getTether } = useChildLocatorContext()
-  
+  const { getTether } = useChildLocatorContext();
+
   // Maintain Observer references for cleanup
   const observersRef = useRef<{
-    mutation?: MutationObserver
-    resize?: ResizeObserver
-    intersection?: IntersectionObserver
-  }>({})
-  
+    mutation?: MutationObserver;
+    resize?: ResizeObserver;
+    intersection?: IntersectionObserver;
+  }>({});
+
   // Stably maintain previous detection results to prevent unnecessary re-renders
-  const lastResultRef = useRef<string>('')
-  
+  const lastResultRef = useRef<string>('');
+
   // Detection process execution flag for debouncing multiple rapid calls
-  const processingRef = useRef(false)
-  
+  const processingRef = useRef(false);
+
   // Ref to reference current values to avoid circular dependencies in useCallback
-  const currentValuesRef = useRef({ offset, enabled, onDetect, scrollContainerRef })
-  currentValuesRef.current = { offset, enabled, onDetect, scrollContainerRef }
-  
+  const currentValuesRef = useRef({
+    offset,
+    enabled,
+    onDetect,
+    scrollContainerRef,
+  });
+  currentValuesRef.current = { offset, enabled, onDetect, scrollContainerRef };
+
   // Determine effective scroll container with automatic fallback to containerRef if scrollable
-  const effectiveScrollContainer = useMemo((): RefObject<HTMLElement | null> | null => {
-    // If explicitly specified, use it
-    if (scrollContainerRef) {
-      return scrollContainerRef
-    }
-    
-    // Check if containerRef itself is scrollable and use it as scroll container
-    if (refTarget.current) {
-      const style = getComputedStyle(refTarget.current)
-      const isScrollable = 
-        style.overflow !== 'visible' || 
-        style.overflowX !== 'visible' || 
-        style.overflowY !== 'visible'
-      
-      if (isScrollable) {
-        return refTarget
+  const effectiveScrollContainer =
+    useMemo((): RefObject<HTMLElement | null> | null => {
+      // If explicitly specified, use it
+      if (scrollContainerRef) {
+        return scrollContainerRef;
       }
-    }
-    
-    // No scroll container (use window scrolling)
-    return null
-  }, [scrollContainerRef, refTarget])
-  
+
+      // Check if containerRef itself is scrollable and use it as scroll container
+      if (refTarget.current) {
+        const style = getComputedStyle(refTarget.current);
+        const isScrollable =
+          style.overflow !== 'visible' ||
+          style.overflowX !== 'visible' ||
+          style.overflowY !== 'visible';
+
+        if (isScrollable) {
+          return refTarget;
+        }
+      }
+
+      // No scroll container (use window scrolling)
+      return null;
+    }, [scrollContainerRef, refTarget]);
+
   // Function to convert CSS units to px values for coordinate calculations
-  const convertToPixels = useCallback((
-    container: HTMLElement,
-    x: number | string,
-    y: number | string
-  ): { x: number; y: number } => {
-    // Return as-is if it's already a number (px value)
-    if (typeof x === 'number' && typeof y === 'number') {
-      return { x, y }
-    }
-    
-    // For CSS units, use invisible element for accurate conversion
-    const manager = new InvisibleElementManager()
-    manager.setContainer(container)
-    
-    try {
-      const position = manager.getPositionFromCSSUnits(x, y)
-      return position || { x: 0, y: 0 }
-    } finally {
-      manager.cleanup()
-    }
-  }, [])
+  const convertToPixels = useCallback(
+    (
+      container: HTMLElement,
+      x: number | string,
+      y: number | string
+    ): { x: number; y: number } => {
+      // Return as-is if it's already a number (px value)
+      if (typeof x === 'number' && typeof y === 'number') {
+        return { x, y };
+      }
+
+      // For CSS units, use invisible element for accurate conversion
+      const manager = new InvisibleElementManager();
+      manager.setContainer(container);
+
+      try {
+        const position = manager.getPositionFromCSSUnits(x, y);
+        return position || { x: 0, y: 0 };
+      } finally {
+        manager.cleanup();
+      }
+    },
+    []
+  );
 
   // Function to get component from element using tether context
-  const getComponentFromElement = useCallback((element: HTMLElement) => {
-    const tetherInfo = getTether(element)
-    if (tetherInfo) {
-      // Create a React element from the tether information
-      return {
-        type: 'div', // Default type, could be extracted from tether metadata
-        props: {
-          ...tetherInfo.props,
-          // Include metadata in a special property for easy access
-          _tetherMetadata: tetherInfo.metadata
-        },
-        key: null,
-        ref: null,
+  const getComponentFromElement = useCallback(
+    (element: HTMLElement) => {
+      const tetherInfo = getTether(element);
+      if (tetherInfo) {
+        // Create a React element from the tether information
+        return {
+          type: 'div', // Default type, could be extracted from tether metadata
+          props: {
+            ...tetherInfo.props,
+            // Include metadata in a special property for easy access
+            _tetherMetadata: tetherInfo.metadata,
+          },
+          key: null,
+          ref: null,
+        };
       }
-    }
-    return undefined
-  }, [getTether])
+      return undefined;
+    },
+    [getTether]
+  );
 
   // Stabilize onDetect callback to prevent unnecessary effect re-runs
   const stableOnDetect = useCallback((component: DetectedComponent) => {
@@ -234,60 +254,74 @@ export const useLocator = (
       hasElement: !!component.element,
       testId: component.element?.getAttribute('data-testid') || null,
       distance: Math.round(component.distanceFromOffset * 10) / 10, // Round to 1 decimal place
-    })
-    
+    });
+
     // Do nothing if same as previous result
     if (lastResultRef.current === hash) {
-      return
+      return;
     }
-    
-    lastResultRef.current = hash
-    currentValuesRef.current.onDetect(component)
-  }, [])
-  
+
+    lastResultRef.current = hash;
+    currentValuesRef.current.onDetect(component);
+  }, []);
+
   // Main detection logic with debouncing to avoid excessive processing
   const detectComponent = useCallback(() => {
-    const { offset: currentOffset, enabled: currentEnabled } = currentValuesRef.current
-    const currentScrollContainer = effectiveScrollContainer
-    
+    const { offset: currentOffset, enabled: currentEnabled } =
+      currentValuesRef.current;
+    const currentScrollContainer = effectiveScrollContainer;
+
     // Skip if already processing or conditions not met
     if (processingRef.current || !refTarget.current || !currentEnabled) {
-      return
+      return;
     }
-    
-    processingRef.current = true
-    
+
+    processingRef.current = true;
+
     // Execute in next event loop to avoid React re-rendering cycle conflicts
     setTimeout(() => {
       try {
         if (!refTarget.current) {
-          processingRef.current = false
-          return
+          processingRef.current = false;
+          return;
         }
-        
+
         // Find target element using coordinate-based detection
-        const targetElement = findElementAtOffset(refTarget.current, currentOffset, currentScrollContainer)
-        
+        const targetElement = findElementAtOffset(
+          refTarget.current,
+          currentOffset,
+          currentScrollContainer
+        );
+
         // Calculate target coordinates for distance measurement
-        let targetX: number, targetY: number
+        let targetX: number, targetY: number;
         if (currentScrollContainer?.current) {
-          const containerRect = currentScrollContainer.current.getBoundingClientRect()
-          const scrollLeft = currentScrollContainer.current.scrollLeft
-          const scrollTop = currentScrollContainer.current.scrollTop
-          const pixelOffset = convertToPixels(refTarget.current, currentOffset.x, currentOffset.y)
-          
+          const containerRect =
+            currentScrollContainer.current.getBoundingClientRect();
+          const scrollLeft = currentScrollContainer.current.scrollLeft;
+          const scrollTop = currentScrollContainer.current.scrollTop;
+          const pixelOffset = convertToPixels(
+            refTarget.current,
+            currentOffset.x,
+            currentOffset.y
+          );
+
           // Calculate coordinates relative to scroll container content
-          targetX = containerRect.left + pixelOffset.x - scrollLeft
-          targetY = containerRect.top + pixelOffset.y - scrollTop
+          targetX = containerRect.left + pixelOffset.x - scrollLeft;
+          targetY = containerRect.top + pixelOffset.y - scrollTop;
         } else {
-          const containerRect = refTarget.current.getBoundingClientRect()
-          const pixelOffset = convertToPixels(refTarget.current, currentOffset.x, currentOffset.y)
-          targetX = containerRect.left + pixelOffset.x
-          targetY = containerRect.top + pixelOffset.y
+          const containerRect = refTarget.current.getBoundingClientRect();
+          const pixelOffset = convertToPixels(
+            refTarget.current,
+            currentOffset.x,
+            currentOffset.y
+          );
+          targetX = containerRect.left + pixelOffset.x;
+          targetY = containerRect.top + pixelOffset.y;
         }
-        
-        let detectedComponent: DetectedComponent
-        
+
+        let detectedComponent: DetectedComponent;
+
         if (!targetElement) {
           // When no child elements are detected at the target coordinates
           detectedComponent = {
@@ -295,123 +329,129 @@ export const useLocator = (
             component: undefined,
             bounds: undefined,
             distanceFromOffset: 0,
-          }
+          };
         } else {
           // When a child element is detected
-          const bounds = targetElement.getBoundingClientRect()
-          const elementCenterX = bounds.left + bounds.width / 2
-          const elementCenterY = bounds.top + bounds.height / 2
-          
+          const bounds = targetElement.getBoundingClientRect();
+          const elementCenterX = bounds.left + bounds.width / 2;
+          const elementCenterY = bounds.top + bounds.height / 2;
+
           // Calculate Euclidean distance from target coordinates to element center
           const distanceFromOffset = Math.sqrt(
-            Math.pow(elementCenterX - targetX, 2) + 
-            Math.pow(elementCenterY - targetY, 2)
-          )
-          
+            Math.pow(elementCenterX - targetX, 2) +
+              Math.pow(elementCenterY - targetY, 2)
+          );
+
           detectedComponent = {
             element: targetElement,
             component: getComponentFromElement(targetElement),
             bounds,
             distanceFromOffset,
-          }
+          };
         }
-        
-        stableOnDetect(detectedComponent)
+
+        stableOnDetect(detectedComponent);
       } finally {
-        processingRef.current = false
+        processingRef.current = false;
       }
-    }, 0)
-  }, [stableOnDetect, convertToPixels, refTarget, effectiveScrollContainer, getComponentFromElement])
-  
+    }, 0);
+  }, [
+    stableOnDetect,
+    convertToPixels,
+    refTarget,
+    effectiveScrollContainer,
+    getComponentFromElement,
+  ]);
+
   // Observer setup for monitoring DOM changes and layout updates
   useEffect(() => {
     if (!refTarget.current || !enabled) {
-      return
+      return;
     }
-    
-    const targetElement = refTarget.current
-    const observers = observersRef.current
-    const currentScrollContainer = effectiveScrollContainer?.current
-    
+
+    const targetElement = refTarget.current;
+    const observers = observersRef.current;
+    const currentScrollContainer = effectiveScrollContainer?.current;
+
     // Clean up existing observers before setting up new ones
     if (observers.mutation) {
-      observers.mutation.disconnect()
+      observers.mutation.disconnect();
     }
     if (observers.resize) {
-      observers.resize.disconnect()
+      observers.resize.disconnect();
     }
     if (observers.intersection) {
-      observers.intersection.disconnect()
+      observers.intersection.disconnect();
     }
-    
+
     // Create MutationObserver for DOM tree changes
     observers.mutation = new MutationObserver(() => {
-      detectComponent()
-    })
-    
+      detectComponent();
+    });
+
     observers.mutation.observe(targetElement, {
       childList: true,
       subtree: true,
       attributes: true,
       attributeFilter: ['style', 'class'],
-    })
-    
+    });
+
     // Create ResizeObserver for size changes
     if (window.ResizeObserver) {
       observers.resize = new ResizeObserver(() => {
-        detectComponent()
-      })
-      observers.resize.observe(targetElement)
-      
+        detectComponent();
+      });
+      observers.resize.observe(targetElement);
+
       // Also observe all child elements for size changes
-      const childElements = targetElement.querySelectorAll('*')
-      childElements.forEach(child => {
+      const childElements = targetElement.querySelectorAll('*');
+      childElements.forEach((child) => {
         if (child instanceof HTMLElement) {
-          observers.resize!.observe(child)
+          observers.resize!.observe(child);
         }
-      })
+      });
     }
-    
+
     // Setup scroll event listeners for scroll containers
     const handleScroll = () => {
-      detectComponent()
-    }
-    
+      detectComponent();
+    };
+
     if (currentScrollContainer) {
-      currentScrollContainer.addEventListener('scroll', handleScroll)
+      currentScrollContainer.addEventListener('scroll', handleScroll);
     } else {
-      window.addEventListener('scroll', handleScroll)
+      window.addEventListener('scroll', handleScroll);
     }
-    
+
     // Setup resize event listener for window
     const handleResize = () => {
-      detectComponent()
-    }
-    
-    window.addEventListener('resize', handleResize)
-    
+      detectComponent();
+    };
+
+    window.addEventListener('resize', handleResize);
+
     // Initial detection
-    detectComponent()
-    
+    detectComponent();
+
     // Cleanup function
     return () => {
       if (observers.mutation) {
-        observers.mutation.disconnect()
+        observers.mutation.disconnect();
       }
       if (observers.resize) {
-        observers.resize.disconnect()
+        observers.resize.disconnect();
       }
       if (observers.intersection) {
-        observers.intersection.disconnect()
+        observers.intersection.disconnect();
       }
-      
+
       if (currentScrollContainer) {
-        currentScrollContainer.removeEventListener('scroll', handleScroll)
+        currentScrollContainer.removeEventListener('scroll', handleScroll);
       } else {
-        window.removeEventListener('scroll', handleScroll)
+        window.removeEventListener('scroll', handleScroll);
       }
-      
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [detectComponent, enabled, refTarget, effectiveScrollContainer])
-} 
+
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [detectComponent, enabled, refTarget, effectiveScrollContainer]);
+};

@@ -1,18 +1,22 @@
-import React, { useRef, useState } from 'react'
-import { useLocator, ChildLocatorProvider, withChildLocator } from 'child-locator'
-import type { DetectedComponent } from 'child-locator'
+import React, { useRef, useState } from 'react';
+import {
+  useLocator,
+  ChildLocatorProvider,
+  withChildLocator,
+} from 'child-locator';
+import type { DetectedComponent } from 'child-locator';
 
 // Tethered component for tracking
-const BaseChildComponent = ({ 
-  id, 
-  position, 
+const BaseChildComponent = ({
+  id,
+  position,
   backgroundColor = '#e3f2fd',
-  borderColor = '#1976d2'
-}: { 
-  id: string
-  position: { x: number; y: number }
-  backgroundColor?: string
-  borderColor?: string
+  borderColor = '#1976d2',
+}: {
+  id: string;
+  position: { x: number; y: number };
+  backgroundColor?: string;
+  borderColor?: string;
 }) => {
   return (
     <div
@@ -38,50 +42,56 @@ const BaseChildComponent = ({
       }}
     >
       <div>{id}</div>
-      <small>({position.x}, {position.y})</small>
+      <small>
+        ({position.x}, {position.y})
+      </small>
     </div>
-  )
-}
+  );
+};
 
-const ChildComponent = withChildLocator(BaseChildComponent)
+const ChildComponent = withChildLocator(BaseChildComponent);
 
 const TestComponent: React.FC = () => {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [offset, setOffset] = useState({ x: 100, y: 100 })
-  const [detected, setDetected] = useState<DetectedComponent | null>(null)
-  const childrenCount = 6 // 6 child components
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [offset, setOffset] = useState({ x: 100, y: 100 });
+  const [detected, setDetected] = useState<DetectedComponent | null>(null);
+  const childrenCount = 6; // 6 child components
 
   useLocator(containerRef, {
     offset,
     onDetect: (detectedComponent) => {
-      setDetected(detectedComponent)
+      setDetected(detectedComponent);
     },
     enabled: true,
-  })
+  });
 
   return (
     <ChildLocatorProvider>
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
         <h2>Test Component - ChildLocatorProvider Implementation</h2>
-        
+
         <div style={{ marginBottom: '20px' }}>
           <h3>Controls</h3>
           <div style={{ display: 'flex', gap: '20px', marginBottom: '10px' }}>
             <label>
-              X Offset: 
-              <input 
-                type="number" 
-                value={offset.x} 
-                onChange={(e) => setOffset({...offset, x: parseInt(e.target.value) || 0})}
+              X Offset:
+              <input
+                type="number"
+                value={offset.x}
+                onChange={(e) =>
+                  setOffset({ ...offset, x: parseInt(e.target.value) || 0 })
+                }
                 style={{ marginLeft: '5px', width: '60px' }}
               />
             </label>
             <label>
-              Y Offset: 
-              <input 
-                type="number" 
-                value={offset.y} 
-                onChange={(e) => setOffset({...offset, y: parseInt(e.target.value) || 0})}
+              Y Offset:
+              <input
+                type="number"
+                value={offset.y}
+                onChange={(e) =>
+                  setOffset({ ...offset, y: parseInt(e.target.value) || 0 })
+                }
                 style={{ marginLeft: '5px', width: '60px' }}
               />
             </label>
@@ -90,21 +100,30 @@ const TestComponent: React.FC = () => {
 
         <div style={{ marginBottom: '20px' }}>
           <h3>Detection Status</h3>
-          <div style={{ backgroundColor: '#f9f9f9', padding: '10px', borderRadius: '4px' }}>
-            <div>Children Count: <strong>{childrenCount}</strong></div>
+          <div
+            style={{
+              backgroundColor: '#f9f9f9',
+              padding: '10px',
+              borderRadius: '4px',
+            }}
+          >
             <div>
-              Detected Element: {' '}
+              Children Count: <strong>{childrenCount}</strong>
+            </div>
+            <div>
+              Detected Element:{' '}
               <strong>
-                {detected?.element ? 
-                  `${detected.element.textContent?.split('(')[0]} (distance: ${detected.distanceFromOffset.toFixed(1)}px)` : 
-                  'None'
-                }
+                {detected?.element
+                  ? `${detected.element.textContent?.split('(')[0]} (distance: ${detected.distanceFromOffset.toFixed(1)}px)`
+                  : 'None'}
               </strong>
             </div>
             {detected?.bounds && (
               <div>
-                Bounds: {detected.bounds.width.toFixed(0)}x{detected.bounds.height.toFixed(0)} 
-                at ({detected.bounds.x.toFixed(0)}, {detected.bounds.y.toFixed(0)})
+                Bounds: {detected.bounds.width.toFixed(0)}x
+                {detected.bounds.height.toFixed(0)}
+                at ({detected.bounds.x.toFixed(0)},{' '}
+                {detected.bounds.y.toFixed(0)})
               </div>
             )}
           </div>
@@ -112,11 +131,11 @@ const TestComponent: React.FC = () => {
 
         <div style={{ position: 'relative' }}>
           <h3>Container</h3>
-          <div 
+          <div
             ref={containerRef}
-            style={{ 
-              width: '500px', 
-              height: '400px', 
+            style={{
+              width: '500px',
+              height: '400px',
               border: '2px solid #333',
               position: 'relative',
               backgroundColor: '#f8f9fa',
@@ -124,11 +143,11 @@ const TestComponent: React.FC = () => {
                 linear-gradient(to right, #e9ecef 1px, transparent 1px),
                 linear-gradient(to bottom, #e9ecef 1px, transparent 1px)
               `,
-              backgroundSize: '50px 50px'
+              backgroundSize: '50px 50px',
             }}
           >
             {/* Target indicator */}
-            <div 
+            <div
               style={{
                 position: 'absolute',
                 left: `${offset.x}px`,
@@ -139,59 +158,61 @@ const TestComponent: React.FC = () => {
                 borderRadius: '50%',
                 zIndex: 1000,
                 pointerEvents: 'none',
-                transform: 'translate(-50%, -50%)'
+                transform: 'translate(-50%, -50%)',
               }}
             />
-            
-            <ChildComponent 
-              id="child-A" 
-              position={{ x: 50, y: 50 }}
-            />
-            <ChildComponent 
-              id="child-B" 
+
+            <ChildComponent id="child-A" position={{ x: 50, y: 50 }} />
+            <ChildComponent
+              id="child-B"
               position={{ x: 200, y: 50 }}
-              backgroundColor="#e8f5e8" 
+              backgroundColor="#e8f5e8"
               borderColor="#4caf50"
             />
-            <ChildComponent 
-              id="child-C" 
+            <ChildComponent
+              id="child-C"
               position={{ x: 350, y: 50 }}
-              backgroundColor="#fff3e0" 
+              backgroundColor="#fff3e0"
               borderColor="#ff9800"
             />
-            <ChildComponent 
-              id="child-D" 
+            <ChildComponent
+              id="child-D"
               position={{ x: 50, y: 200 }}
-              backgroundColor="#fce4ec" 
+              backgroundColor="#fce4ec"
               borderColor="#e91e63"
             />
-            <ChildComponent 
-              id="child-E" 
+            <ChildComponent
+              id="child-E"
               position={{ x: 200, y: 200 }}
-              backgroundColor="#f3e5f5" 
+              backgroundColor="#f3e5f5"
               borderColor="#9c27b0"
             />
-            <ChildComponent 
-              id="child-F" 
+            <ChildComponent
+              id="child-F"
               position={{ x: 350, y: 200 }}
-              backgroundColor="#e0f2f1" 
+              backgroundColor="#e0f2f1"
               borderColor="#009688"
             />
           </div>
         </div>
-        
+
         <div style={{ marginTop: '20px', fontSize: '14px', color: '#666' }}>
-          <p><strong>Instructions:</strong></p>
+          <p>
+            <strong>Instructions:</strong>
+          </p>
           <ul>
             <li>Red dot shows target coordinates</li>
             <li>Change X/Y offset values to move target</li>
             <li>Uses ChildLocatorProvider for component tracking</li>
-            <li>Distance shows how far the detected element center is from the target</li>
+            <li>
+              Distance shows how far the detected element center is from the
+              target
+            </li>
           </ul>
         </div>
       </div>
     </ChildLocatorProvider>
-  )
-}
+  );
+};
 
-export default TestComponent 
+export default TestComponent;

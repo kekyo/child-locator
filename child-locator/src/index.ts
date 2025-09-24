@@ -1,9 +1,9 @@
 // Main child-locator API
-export { useLocator } from './hooks/useLocator'
+export { useLocator } from './hooks/useLocator';
 
 // Child-locator specific provider and HOC
-export { ChildLocatorProvider } from './providers/ChildLocatorProvider'
-export { withChildLocator } from './hocs/withChildLocator'
+export { ChildLocatorProvider } from './providers/ChildLocatorProvider';
+export { withChildLocator } from './hocs/withChildLocator';
 
 // Types
 export type {
@@ -11,7 +11,7 @@ export type {
   OffsetCoordinates,
   UseLocatorOptions,
   ChildLocatorMetadata,
-} from './types/useLocator'
+} from './types/useLocator';
 
-export type { WithChildLocatorProps } from './hocs/withChildLocator'
-export type { ChildLocatorProviderProps } from './providers/ChildLocatorProvider'
+export type { WithChildLocatorProps } from './hocs/withChildLocator';
+export type { ChildLocatorProviderProps } from './providers/ChildLocatorProvider';

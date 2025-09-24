@@ -15,9 +15,7 @@
     }
   },
   "files": [
-    "dist/**/*.js",
-    "dist/**/*.d.ts",
-    "dist/**/*.map"
+    "dist"
   ],
   "scripts": {
     "dev": "echo \"Nothing dev script in child-locator project.\"",
@@ -26,8 +24,8 @@
   },
   "dependencies": {
     "react": ">=16.0.0",
-    "react-dom": ">=16.0.0",
-    "react-attractor": ">=0.5.0"
+    "react-attractor": ">=0.5.0",
+    "react-dom": ">=16.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": ">=6.0.0",
@@ -39,6 +37,7 @@
     "@vitejs/plugin-react": ">=5.0.0",
     "globals": ">=16.0.0",
     "jsdom": ">=26.0.0",
+    "prettier-max": ">=1.9.0",
     "react": ">=19.0.0",
     "react-dom": ">=19.0.0",
     "typescript": ">=5.0.0",

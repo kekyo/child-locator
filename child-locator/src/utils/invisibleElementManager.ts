@@ -1,93 +1,97 @@
-import type { CSSUnitValue } from '../types/useLocator'
+import type { CSSUnitValue } from '../types/useLocator';
 
 /**
  * Class for managing invisible elements
  * Manages temporary elements used for position detection in useLocator
  */
 export class InvisibleElementManager {
-  private container: HTMLElement | null = null
-  private invisibleElement: HTMLElement | null = null
-  private static readonly LOCATOR_MARKER = 'data-locator-invisible'
-  
+  private container: HTMLElement | null = null;
+  private invisibleElement: HTMLElement | null = null;
+  private static readonly LOCATOR_MARKER = 'data-locator-invisible';
+
   /**
    * Set container
    */
   setContainer(container: HTMLElement | null): void {
     if (this.container !== container) {
-      this.cleanup()
-      this.container = container
+      this.cleanup();
+      this.container = container;
     }
   }
-  
+
   /**
    * Place invisible element at specified position and get its actual coordinates
    */
-  getPositionFromCSSUnits(x: CSSUnitValue, y: CSSUnitValue): { x: number; y: number } | null {
+  getPositionFromCSSUnits(
+    x: CSSUnitValue,
+    y: CSSUnitValue
+  ): { x: number; y: number } | null {
     if (!this.container) {
-      return null
+      return null;
     }
-    
+
     // Remove existing invisible element
-    this.cleanup()
-    
+    this.cleanup();
+
     // Create new invisible element
-    this.invisibleElement = document.createElement('div')
-    
+    this.invisibleElement = document.createElement('div');
+
     // Mark for exclusion from componentRef
-    this.invisibleElement.setAttribute(InvisibleElementManager.LOCATOR_MARKER, 'true')
-    
+    this.invisibleElement.setAttribute(
+      InvisibleElementManager.LOCATOR_MARKER,
+      'true'
+    );
+
     // Set invisible element styles
-    this.invisibleElement.style.position = 'absolute'
-    this.invisibleElement.style.left = typeof x === 'number' ? `${x}px` : x
-    this.invisibleElement.style.top = typeof y === 'number' ? `${y}px` : y
-    this.invisibleElement.style.width = '1px'
-    this.invisibleElement.style.height = '1px'
-    this.invisibleElement.style.visibility = 'hidden'
-    this.invisibleElement.style.pointerEvents = 'none'
-    this.invisibleElement.style.zIndex = '-1'
-    this.invisibleElement.style.opacity = '0'
-    
+    this.invisibleElement.style.position = 'absolute';
+    this.invisibleElement.style.left = typeof x === 'number' ? `${x}px` : x;
+    this.invisibleElement.style.top = typeof y === 'number' ? `${y}px` : y;
+    this.invisibleElement.style.width = '1px';
+    this.invisibleElement.style.height = '1px';
+    this.invisibleElement.style.visibility = 'hidden';
+    this.invisibleElement.style.pointerEvents = 'none';
+    this.invisibleElement.style.zIndex = '-1';
+    this.invisibleElement.style.opacity = '0';
+
     // Add to container
-    this.container.appendChild(this.invisibleElement)
-    
+    this.container.appendChild(this.invisibleElement);
+
     // Force layout calculation
-    void this.container.offsetWidth
-    
+    void this.container.offsetWidth;
+
     // Get position relative to container using offsetLeft and offsetTop
-    const rect = this.invisibleElement.getBoundingClientRect()
-    const containerRect = this.container.getBoundingClientRect()
-    
+    const rect = this.invisibleElement.getBoundingClientRect();
+    const containerRect = this.container.getBoundingClientRect();
+
     return {
       x: rect.left - containerRect.left,
-      y: rect.top - containerRect.top
-    }
+      y: rect.top - containerRect.top,
+    };
   }
-  
+
   /**
    * Clean up invisible elements
    */
   cleanup(): void {
     if (this.invisibleElement && this.invisibleElement.parentNode) {
-      this.invisibleElement.parentNode.removeChild(this.invisibleElement)
-      this.invisibleElement = null
+      this.invisibleElement.parentNode.removeChild(this.invisibleElement);
+      this.invisibleElement = null;
     }
   }
-  
+
   /**
    * Check if element is a locator invisible element
    */
   static isLocatorInvisibleElement(element: Element): boolean {
-    return element.hasAttribute(InvisibleElementManager.LOCATOR_MARKER)
+    return element.hasAttribute(InvisibleElementManager.LOCATOR_MARKER);
   }
-  
+
   /**
    * Get visible children (excluding invisible elements)
    */
   static getVisibleChildren(container: Element): Element[] {
-    return Array.from(container.children).filter(child => 
-      !InvisibleElementManager.isLocatorInvisibleElement(child)
-    )
+    return Array.from(container.children).filter(
+      (child) => !InvisibleElementManager.isLocatorInvisibleElement(child)
+    );
   }
 }
-
- 
