@@ -1,4 +1,9 @@
-/// <reference types="vitest/globals" />
+// child-locator - A React Hook for locating child components at specific coordinates within a parent container
+// Copyright (c) Kouji Matsui (@kekyo@mi.kekyo.net)
+// Under MIT.
+// https://github.com/kekyo/child-locator/
+
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { InvisibleElementManager } from '../../src/utils/invisibleElementManager';
 
 describe('InvisibleElementManager', () => {
