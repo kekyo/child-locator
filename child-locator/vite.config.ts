@@ -3,10 +3,11 @@
 // Under MIT.
 // https://github.com/kekyo/child-locator/
 
+import { resolve } from 'path';
+import { fileURLToPath } from 'url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
-import { resolve } from 'path';
 import prettierMax from 'prettier-max';
 import screwUp from 'screw-up';
 
@@ -21,9 +22,13 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: resolve(
+        fileURLToPath(new URL('.', import.meta.url)),
+        'src/index.ts'
+      ),
       name: 'child-locator',
-      fileName: (format) => `child-locator.${format}.js`,
+      fileName: (format, entryName) =>
+        `${entryName}.${format === 'es' ? 'js' : 'cjs'}`,
       formats: ['es', 'cjs'],
     },
     rollupOptions: {
@@ -42,10 +47,6 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
-    exclude: [
-      '**/node_modules/**',
-      '**/playwright-report/**',
-      '**/test-results/**',
-    ],
+    exclude: ['**/node_modules/**'],
   },
 });

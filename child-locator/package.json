@@ -4,14 +4,14 @@
   "version": "0.0.1",
   "readme": "README-pack.md",
   "type": "module",
-  "main": "./dist/child-locator.cjs.js",
-  "module": "./dist/child-locator.es.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/child-locator.es.js",
-      "require": "./dist/child-locator.cjs.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
   "files": [
