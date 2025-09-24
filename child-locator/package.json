@@ -26,11 +26,9 @@
     "build:types": "npm run build && tsc --project tsconfig.lib.json",
     "test": "npm run build && vitest run"
   },
-  "peerDependencies": {
-    "react": ">=16.8.0",
-    "react-dom": ">=16.8.0"
-  },
   "dependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0",
     "react-attractor": "^0.5.0"
   },
   "devDependencies": {
@@ -41,7 +39,6 @@
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^5.0.3",
-    "@vitest/ui": "^3.1.4",
     "globals": "^16.0.0",
     "jsdom": "^26.1.0",
     "react": "^19.1.0",
