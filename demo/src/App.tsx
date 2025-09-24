@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { useLocator, withChildLocator } from './index'
-import type { DetectedComponent } from './types/useLocator'
+import { useLocator, withChildLocator } from 'child-locator'
+import type { DetectedComponent } from 'child-locator'
 
 interface GridItem {
   id: string

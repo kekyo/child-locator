@@ -1,0 +1,60 @@
+{
+  "name": "child-locator",
+  "private": false,
+  "version": "0.3.5",
+  "readme": "README-pack.md",
+  "type": "module",
+  "main": "./dist/child-locator.cjs.js",
+  "module": "./dist/child-locator.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/child-locator.es.js",
+      "require": "./dist/child-locator.cjs.js"
+    }
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "dist/**/*.map"
+  ],
+  "scripts": {
+    "dev": "echo \"Nothing dev script in child-locator project.\"",
+    "build": "npm run lint && vite build",
+    "build:lib": "npm run build && npm run build:types",
+    "build:types": "npm run lint && tsc --project tsconfig.lib.json",
+    "lint": "tsc -b && eslint .",
+    "test": "npm run lint && vitest run"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "dependencies": {
+    "react-attractor": "^0.5.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.15.21",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react-swc": "^3.9.0",
+    "@vitest/ui": "^3.1.4",
+    "eslint": "^9.25.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "jsdom": "^26.1.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.30.1",
+    "vite": "^6.3.5",
+    "vite-plugin-checker": "^0.9.3",
+    "vitest": "^3.1.4"
+  }
+}

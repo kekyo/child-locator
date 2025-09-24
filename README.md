@@ -426,22 +426,3 @@ const GridComponent: React.FC = () => {
 ## License
 
 MIT License - see LICENSE file for details.
-
-## Changelog
-
-* 0.4.0
-  * Breaking Change: Replaced direct react-attractor exports with child-locator specific API
-* 0.3.0
-  * Fixed detection for coordinates when using in overflowed container
-  * Improved locator when detecting point is on outside viewport
-* 0.2.0
-  * CSS Unit Support: Added support for multiple coordinate unit types (px, %, vw, vh, rem, em)
-  * Flexible Coordinate System: Coordinates now accept both number (pixels) and string (CSS units) values
-  * Responsive Design: Percentage and viewport units automatically adapt to container and viewport size changes
-  * Enhanced API: Updated `OffsetCoordinates` interface to support `CSSUnitValue` type
-  * Improved Examples: Added comprehensive CSS unit usage examples in documentation
-* 0.1.0:
-  * Initial release with XY coordinate detection
-  * React component mapping support
-  * Comprehensive observer-based monitoring
-  * TypeScript support with full type definitions

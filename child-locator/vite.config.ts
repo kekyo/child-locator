@@ -4,7 +4,6 @@ import react from '@vitejs/plugin-react-swc'
 import { resolve } from 'path'
 import checker from 'vite-plugin-checker'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
@@ -19,12 +18,6 @@ export default defineConfig({
       }
     })
   ],
-  server: {
-    port: 59517,
-    hmr: {
-      overlay: false
-    }
-  },
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
@@ -48,6 +41,6 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
-    exclude: ['**/node_modules/**', '**/test_e2e/**', '**/playwright-report/**', '**/test-results/**'],
+    exclude: ['**/node_modules/**', '**/playwright-report/**', '**/test-results/**'],
   },
 })

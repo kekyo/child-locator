@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ChildLocatorProvider } from './index'
+import { ChildLocatorProvider } from 'child-locator'
 import './index.css'
 import App from './App.tsx'
 

@@ -1,8 +1,6 @@
 {
-  "name": "child-locator",
-  "private": false,
-  "version": "0.3.5",
-  "type": "module",
+  "name": "child-locator-workspace",
+  "version": "0.0.1",
   "description": "A React Hook for locating child components at specific coordinates within a parent container",
   "keywords": [
     "react",
@@ -20,66 +18,17 @@
     "url": "https://github.com/kekyo/child-locator.git"
   },
   "homepage": "https://github.com/kekyo/child-locator#readme",
-  "main": "./dist/child-locator.cjs.js",
-  "module": "./dist/child-locator.es.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/child-locator.es.js",
-      "require": "./dist/child-locator.cjs.js"
-    }
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "child-locator",
+      "demo"
+    ]
   },
-  "files": [
-    "dist/**/*.js",
-    "dist/**/*.d.ts",
-    "dist/**/*.map",
-    "README.md",
-    "LICENSE"
-  ],
   "scripts": {
-    "dev": "npm run lint && vite",
-    "build": "npm run lint && vite build",
-    "build:lib": "npm run build && npm run build:types",
-    "build:types": "npm run lint && tsc --project tsconfig.lib.json",
-    "prepublishOnly": "npm run build:lib",
-    "lint": "tsc -b && eslint .",
-    "preview": "vite preview",
-    "test": "npm run test:root && npm run test:e2e",
-    "test:root": "npm run lint && vitest --run",
-    "test:ui": "npm run lint && vitest --ui",
-    "test:e2e": "npm run lint && playwright test test_e2e/ --reporter=list",
-    "test:e2e:ui": "npm run lint && playwright test --ui test_e2e/"
-  },
-  "peerDependencies": {
-    "react": ">=16.8.0",
-    "react-dom": ">=16.8.0"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.25.0",
-    "@playwright/test": "^1.52.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.3.0",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^22.15.21",
-    "@types/react": "^19.1.2",
-    "@types/react-dom": "^19.1.2",
-    "@vitejs/plugin-react-swc": "^3.9.0",
-    "@vitest/ui": "^3.1.4",
-    "eslint": "^9.25.0",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.19",
-    "globals": "^16.0.0",
-    "jsdom": "^26.1.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "typescript": "~5.8.3",
-    "typescript-eslint": "^8.30.1",
-    "vite": "^6.3.5",
-    "vite-plugin-checker": "^0.9.3",
-    "vitest": "^3.1.4"
-  },
-  "dependencies": {
-    "react-attractor": "^0.5.0"
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces",
+    "dev": "npm run dev --workspaces"
   }
 }

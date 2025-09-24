@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react'
-import { useLocator, ChildLocatorProvider, withChildLocator } from '../'
-import type { DetectedComponent } from '../types/useLocator'
+import { useLocator, ChildLocatorProvider, withChildLocator } from 'child-locator'
+import type { DetectedComponent } from 'child-locator'
 
 // Tethered component for tracking
 const BaseMockComponent = ({ 

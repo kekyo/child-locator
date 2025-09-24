@@ -1,0 +1,35 @@
+{
+  "name": "child-locator-demo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "tsc -b && eslint .",
+    "test": "npm run lint",
+    "test:e2e": "npm run lint && playwright test test_e2e/ --reporter=list",
+    "test:e2e:ui": "npm run lint && playwright test --ui test_e2e/"
+  },
+  "dependencies": {
+    "child-locator": "^0.3.5",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.0",
+    "@playwright/test": "^1.52.0",
+    "@types/node": "^22.15.21",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react-swc": "^3.9.0",
+    "eslint": "^9.25.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.30.1",
+    "vite": "^6.3.5",
+    "vite-plugin-checker": "^0.9.3"
+  }
+}
