@@ -5,16 +5,24 @@ A React Hook for detecting child components at specific XY coordinates within a 
 [![NPM child-locator](https://img.shields.io/npm/v/child-locator)](https://www.npmjs.com/package/child-locator)
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 
-## Features
+## What is this?
+
+If you're hesitant to manipulate delicate `Observers` to retrieve elements at specific positions displayed in the browser using React, the child-locator package might be useful.
+
+This package identifies elements within a specified visible area of the page and makes it easy to retrieve the information held by those elements.
+Since it's implemented using callback handlers, it can detect changes even when the layout shifts and elements change.
+
+The detection position is not limited to absolute coordinates; it can also use various CSS units, enabling stable position detection for responsive design pages.
+
+![demo project](images/demo.png)
+
+Features:
 
 - XY Coordinate Detection: Precisely locate child components at specified coordinates
-- CSS Unit Support: Coordinate values support px (number), %, vw, vh, rem, em (string) units
-- Real-time Monitoring: Automatically detects changes in child elements using MutationObserver, ResizeObserver, and IntersectionObserver
-- Distance Calculation: Provides Euclidean distance from target coordinates to detected elements
-- TypeScript Support: Full TypeScript support with comprehensive type definitions
-- React Component Mapping: Maps HTML elements back to their React components with metadata support
-- Performance Optimized: Efficient observer management with proper cleanup
-- Provider-based Architecture: Clean API with centralized component tracking
+- CSS Unit Support: Coordinate values support px (number), `%`, `vw`, `vh`, `rem`, `em` (string) and other CSS units
+- Real-time Monitoring: Automatically detects changes in child elements using `MutationObserver`, `ResizeObserver`, and `IntersectionObserver`
+
+---
 
 ## Installation
 
@@ -24,21 +32,29 @@ npm install child-locator
 
 ## Basic Usage
 
+To use child-locator, prepare as follows:
+
+1. Setup the `ChildLocatorProvider` to enable child-locator to communicate information.
+2. Next, implement trackable component whose location you want to detect. Extend this component into a detectable component using `withChildLocator`.
+3. Use `useLocator` to set up the container component and handler.
+
+When a component at the specified location is detected, the handler is called.
+
 ### 1. Setup Provider
 
-First, wrap your app with `ChildLocatorProvider`:
+First, setup your app with `ChildLocatorProvider`:
 
 ```tsx
-import React from 'react'
-import { ChildLocatorProvider } from 'child-locator'
-import App from './App'
+import React from 'react';
+import { ChildLocatorProvider } from 'child-locator';
+import App from './App';
 
 function Root() {
   return (
     <ChildLocatorProvider>
       <App />
     </ChildLocatorProvider>
-  )
+  );
 }
 ```
 
@@ -47,32 +63,27 @@ function Root() {
 Use `withChildLocator` to make components trackable:
 
 ```tsx
-import React from 'react'
-import { withChildLocator } from 'child-locator'
-import type { WithChildLocatorProps } from 'child-locator'
+import React from 'react';
+import { withChildLocator } from 'child-locator';
+import type { WithChildLocatorProps } from 'child-locator';
 
-// Base component
-const BaseChildItem = ({ id, children }: { 
-  id: number; 
-  children: React.ReactNode 
+// Base component (designed for your requirement)
+const BaseChildItem = ({
+  id,
+  children,
+}: {
+  id: number;
+  children: React.ReactNode;
 }) => {
   return (
-    <div data-testid={`child-${id}`} style={{ 
-      position: 'absolute',
-      left: id * 100,
-      top: id * 80,
-      width: 80,
-      height: 60,
-      border: '1px solid #ccc',
-      backgroundColor: '#f9f9f9'
-    }}>
+    <div data-testid={`child-${id}`}>
       {children}
     </div>
-  )
-}
+  );
+};
 
 // Make it trackable with child-locator
-const ChildItem = withChildLocator(BaseChildItem)
+const ChildItem = withChildLocator(BaseChildItem);
 ```
 
 ### 3. Use Detection Hook
@@ -80,51 +91,54 @@ const ChildItem = withChildLocator(BaseChildItem)
 Use `useLocator` to detect components at specific coordinates:
 
 ```tsx
-import React, { useRef } from 'react'
-import { useLocator } from 'child-locator'
-import type { DetectedComponent } from 'child-locator'
+import React, { useRef } from 'react';
+import { useLocator } from 'child-locator';
+import type { DetectedComponent } from 'child-locator';
 
 const ParentComponent = () => {
-  const containerRef = useRef<HTMLDivElement>(null)
-  
+  // Makes refer the container
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useLocator(containerRef, {
-    offset: { x: '50%', y: '30%' }, // CSS units supported: px, %, vw, vh, rem, em
+    // Detection coordinates: CSS units supported: px, %, vw, vh, rem, em
+    offset: { x: '50%', y: '30%' },
+    // Detected callback:
     onDetect: (component: DetectedComponent) => {
       if (component.element) {
-        console.log('Detected element:', component.element)
-        console.log('Distance from target:', component.distanceFromOffset)
-        console.log('Component metadata:', component.component?.props._tetherMetadata)
+        console.log('Detected element:', component.element);
+        console.log('Distance from target:', component.distanceFromOffset);
+        console.log(
+          'Component metadata:',
+          component.component?.props._tetherMetadata
+        );
       } else {
-        console.log('No child elements at target coordinates')
+        console.log('No child elements at target coordinates');
       }
     },
-    enabled: true
-  })
-  
+    enabled: true,
+  });
+
+  // Place detection target items into the container
   return (
-    <div ref={containerRef} style={{ width: 400, height: 300, position: 'relative' }}>
-      <ChildItem 
-        id={1} 
-        tetherMetadata={{ type: 'grid-item', row: 1, col: 1 }}
-      >
+    <div
+      ref={containerRef}
+      style={{ width: 400, height: 300, position: 'relative' }}
+    >
+      <ChildItem id={1} tetherMetadata={{ type: 'grid-item', row: 1, col: 1 }}>
         Item 1
       </ChildItem>
-      <ChildItem 
-        id={2} 
-        tetherMetadata={{ type: 'grid-item', row: 1, col: 2 }}
-      >
+      <ChildItem id={2} tetherMetadata={{ type: 'grid-item', row: 1, col: 2 }}>
         Item 2
       </ChildItem>
-      <ChildItem 
-        id={3} 
-        tetherMetadata={{ type: 'grid-item', row: 2, col: 1 }}
-      >
+      <ChildItem id={3} tetherMetadata={{ type: 'grid-item', row: 2, col: 1 }}>
         Item 3
       </ChildItem>
     </div>
-  )
-}
+  );
+};
 ```
+
+---
 
 ## API Reference
 
@@ -175,8 +189,6 @@ interface ChildLocatorMetadata {
 useLocator(refTarget, options)
 ```
 
-#### Parameters
-
 - `refTarget: RefObject<HTMLElement | null>` - Reference to the container element
 - `options: UseLocatorOptions` - Configuration options
 
@@ -214,14 +226,17 @@ interface DetectedComponent {
 ```
 
 The `component` property contains the React element with props and metadata:
+
 ```tsx
 // Access metadata
 const metadata = detected.component?.props._tetherMetadata
 ```
 
-## Advanced Usage
+---
 
-### CSS Unit Support Examples
+## Examples
+
+### CSS Unit Support
 
 ```tsx
 import React, { useRef, useState } from 'react'
@@ -389,6 +404,8 @@ const GridComponent: React.FC = () => {
 }
 ```
 
+---
+
 ## Important Notes
 
 ### Coordinate System
@@ -416,13 +433,19 @@ const GridComponent: React.FC = () => {
 
 ### Performance Considerations
 
-- The hook uses multiple observers (MutationObserver, ResizeObserver, IntersectionObserver) for comprehensive monitoring
+- The hook uses multiple observers (`MutationObserver`, `ResizeObserver`, `IntersectionObserver`) for comprehensive monitoring
 - Detection callbacks are debounced to prevent excessive calls
 - Observers are automatically cleaned up when the component unmounts or when disabled
 - Components are tracked efficiently using internal WeakMap-based storage
 
 ----
 
+## Discussions and Pull Requests
+
+For discussions, please refer to the [GitHub Discussions page](https://github.com/kekyo/child-locator/discussions). We have currently stopped issue-based discussions.
+
+Pull requests are welcome! Please submit them as diffs against the `develop` branch and squashed changes before send.
+
 ## License
 
-MIT License - see LICENSE file for details.
+Under MIT.

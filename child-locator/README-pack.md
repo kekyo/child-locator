@@ -5,16 +5,22 @@ A React Hook for detecting child components at specific XY coordinates within a 
 [![NPM child-locator](https://img.shields.io/npm/v/child-locator)](https://www.npmjs.com/package/child-locator)
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 
-## Features
+## What is this?
+
+If you're hesitant to manipulate delicate `Observers` to retrieve elements at specific positions displayed in the browser using React, the child-locator package might be useful.
+
+This package identifies elements within a specified visible area of the page and makes it easy to retrieve the information held by those elements.
+Since it's implemented using callback handlers, it can detect changes even when the layout shifts and elements change.
+
+The detection position is not limited to absolute coordinates; it can also use various CSS units, enabling stable position detection for responsive design pages.
+
+![demo project](images/demo.png)
+
+Features:
 
 - XY Coordinate Detection: Precisely locate child components at specified coordinates
-- CSS Unit Support: Coordinate values support px (number), %, vw, vh, rem, em (string) units
-- Real-time Monitoring: Automatically detects changes in child elements using MutationObserver, ResizeObserver, and IntersectionObserver
-- Distance Calculation: Provides Euclidean distance from target coordinates to detected elements
-- TypeScript Support: Full TypeScript support with comprehensive type definitions
-- React Component Mapping: Maps HTML elements back to their React components with metadata support
-- Performance Optimized: Efficient observer management with proper cleanup
-- Provider-based Architecture: Clean API with centralized component tracking
+- CSS Unit Support: Coordinate values support px (number), `%`, `vw`, `vh`, `rem`, `em` (string) and other CSS units
+- Real-time Monitoring: Automatically detects changes in child elements using `MutationObserver`, `ResizeObserver`, and `IntersectionObserver`
 
 ## Installation
 
@@ -26,7 +32,7 @@ npm install child-locator
 
 ### 1. Setup Provider
 
-First, wrap your app with `ChildLocatorProvider`:
+First, setup your app with `ChildLocatorProvider`:
 
 ```tsx
 import React from 'react';
@@ -51,7 +57,7 @@ import React from 'react';
 import { withChildLocator } from 'child-locator';
 import type { WithChildLocatorProps } from 'child-locator';
 
-// Base component
+// Base component (designed for your requirement)
 const BaseChildItem = ({
   id,
   children,
@@ -91,10 +97,13 @@ import { useLocator } from 'child-locator';
 import type { DetectedComponent } from 'child-locator';
 
 const ParentComponent = () => {
+  // Makes refer the container
   const containerRef = useRef<HTMLDivElement>(null);
 
   useLocator(containerRef, {
-    offset: { x: '50%', y: '30%' }, // CSS units supported: px, %, vw, vh, rem, em
+    // Detection coordinates: CSS units supported: px, %, vw, vh, rem, em
+    offset: { x: '50%', y: '30%' },
+    // Detected callback:
     onDetect: (component: DetectedComponent) => {
       if (component.element) {
         console.log('Detected element:', component.element);
@@ -110,6 +119,7 @@ const ParentComponent = () => {
     enabled: true,
   });
 
+  // Place detection target items into the container
   return (
     <div
       ref={containerRef}
