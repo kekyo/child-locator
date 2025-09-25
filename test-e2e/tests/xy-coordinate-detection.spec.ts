@@ -4,8 +4,13 @@ test.describe('Child Locator - XY Coordinate Detection', () => {
   test.beforeEach(async ({ page }) => {
     // Load the actual React app with child-locator
     await page.goto('http://localhost:59517/')
-    await page.waitForSelector('h1:has-text("child-locator Test Page")', { timeout: 10000 })
+    const elementScrollButton = page.getByRole('button', { name: 'Element scroll' })
+    await elementScrollButton.waitFor({ timeout: 10000 })
+    if (!(await elementScrollButton.isDisabled())) {
+      await elementScrollButton.click()
+    }
     await page.waitForSelector('[data-testid^="Item-"]', { timeout: 10000 })
+    await page.waitForSelector('[data-testid="detected-item"]', { timeout: 10000 })
     
     // Wait for child-locator initialization
     await page.waitForTimeout(500)
@@ -52,9 +57,9 @@ test.describe('Child Locator - XY Coordinate Detection', () => {
       await page.mouse.move(actualCenterX, actualCenterY)
       await page.waitForTimeout(300)
       
-      const detectedText = await page.locator('p:has-text("Detected Item:")').textContent()
-      const mouseCoordText = await page.locator('p:has-text("Mouse Coordinates:")').textContent()  
-      const boundsText = await page.locator('p:has-text("Element Bounds:")').textContent()
+      const detectedText = await page.locator('[data-testid="detected-item"]').textContent()
+      const mouseCoordText = await page.locator('[data-testid="mouse-coordinates"]').textContent()  
+      const boundsText = await page.locator('[data-testid="element-bounds"]').textContent()
       
       console.log(`Detection result: ${detectedText}`)
       console.log(`Mouse coordinates: ${mouseCoordText}`)
@@ -101,8 +106,8 @@ test.describe('Child Locator - XY Coordinate Detection', () => {
       await page.mouse.move(pos.x, pos.y)
       await page.waitForTimeout(300)
       
-      const detectedText = await page.locator('p:has-text("Detected Item:")').textContent()
-      const mouseCoordText = await page.locator('p:has-text("Mouse Coordinates:")').textContent()
+      const detectedText = await page.locator('[data-testid="detected-item"]').textContent()
+      const mouseCoordText = await page.locator('[data-testid="mouse-coordinates"]').textContent()
       
       console.log(`Detection: ${detectedText}`)
       console.log(`Mouse coordinates: ${mouseCoordText}`)
@@ -127,7 +132,7 @@ test.describe('Child Locator - XY Coordinate Detection', () => {
     console.log('=== Edge Coordinates Test ===')
 
     // Get container bounds
-    const container = page.locator('div[style*="overflow: auto"]').first()
+    const container = page.locator('[data-testid="grid-container"]').first()
     const containerBox = await container.boundingBox()
     if (!containerBox) {
       throw new Error('Container not found')
@@ -158,8 +163,8 @@ test.describe('Child Locator - XY Coordinate Detection', () => {
       await page.mouse.move(pos.x, pos.y)
       await page.waitForTimeout(300)
 
-      const detectedText = await page.locator('p:has-text("Detected Item:")').textContent()
-      const boundsText = await page.locator('p:has-text("Element Bounds:")').textContent()
+      const detectedText = await page.locator('[data-testid="detected-item"]').textContent()
+      const boundsText = await page.locator('[data-testid="element-bounds"]').textContent()
 
       console.log(`Detection: ${detectedText}`)
       console.log(`Bounds: ${boundsText}`)
@@ -203,8 +208,8 @@ test.describe('Child Locator - XY Coordinate Detection', () => {
       await page.mouse.move(pos.x, pos.y)
       await page.waitForTimeout(200)
       
-      const detectedText = await page.locator('p:has-text("Detected Item:")').textContent()
-      const mouseCoordText = await page.locator('p:has-text("Mouse Coordinates:")').textContent()
+      const detectedText = await page.locator('[data-testid="detected-item"]').textContent()
+      const mouseCoordText = await page.locator('[data-testid="mouse-coordinates"]').textContent()
       
       console.log(`Mouse at: (${pos.x}, ${pos.y})`)
       if (mouseCoordText) {
@@ -257,8 +262,8 @@ test.describe('Child Locator - XY Coordinate Detection', () => {
       await page.mouse.move(centerX, centerY)
       await page.waitForTimeout(300) // Wait for detection to stabilize
       
-      const detectedText = await page.locator('p:has-text("Detected Item:")').textContent()
-      const mouseCoordText = await page.locator('p:has-text("Mouse Coordinates:")').textContent()
+      const detectedText = await page.locator('[data-testid="detected-item"]').textContent()
+      const mouseCoordText = await page.locator('[data-testid="mouse-coordinates"]').textContent()
       
       console.log(`Rapid detection: ${detectedText}`)
       console.log(`Coordinates: ${mouseCoordText}`)

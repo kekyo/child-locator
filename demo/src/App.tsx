@@ -267,7 +267,7 @@ const LocatorTestPage: React.FC<{ variant: LocatorVariant }> = ({
     <div style={outerStyle}>
       <div style={infoWrapperStyle}>
         {/* Description */}
-        <div style={infoPanelStyle}>
+        <div style={infoPanelStyle} data-testid="description-panel">
           <p>
             <strong>Description:</strong>
           </p>
@@ -278,17 +278,17 @@ const LocatorTestPage: React.FC<{ variant: LocatorVariant }> = ({
           </ul>
         </div>
         {/* child-locator detection results display area */}
-        <div style={infoPanelStyle}>
+        <div style={infoPanelStyle} data-testid="detection-summary">
           <h3>child-locator Detection Information:</h3>
           <ul>
-            <li>
+            <li data-testid="mouse-coordinates">
               <strong>Mouse Coordinates:</strong> X: {mouseOffset.x}px, Y:{' '}
               {mouseOffset.y}px
             </li>
-            <li>
+            <li data-testid="managed-count">
               <strong>Managed Components Count:</strong> {childrenCount}
             </li>
-            <li>
+            <li data-testid="detected-item">
               <strong>Detected Item:</strong>{' '}
               {detected?.element
                 ? (() => {
@@ -302,7 +302,7 @@ const LocatorTestPage: React.FC<{ variant: LocatorVariant }> = ({
                   })()
                 : 'None'}
             </li>
-            <li>
+            <li data-testid="element-bounds">
               <strong>Element Bounds:</strong>{' '}
               {detected?.bounds
                 ? `${detected.bounds.width.toFixed(0)}x${detected.bounds.height.toFixed(0)} at (${detected.bounds.x.toFixed(0)}, ${detected.bounds.y.toFixed(0)})`
@@ -317,6 +317,7 @@ const LocatorTestPage: React.FC<{ variant: LocatorVariant }> = ({
         ref={containerRef}
         onMouseMove={handleMouseMove}
         style={containerStyle}
+        data-testid="grid-container"
       >
         <div
           ref={innerContainerRef}

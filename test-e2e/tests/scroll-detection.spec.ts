@@ -4,8 +4,13 @@ test.describe('Child Locator - Scroll Detection', () => {
   test.beforeEach(async ({ page }) => {
     // Load the actual React app with child-locator
     await page.goto('http://localhost:59517/')
-    await page.waitForSelector('h1:has-text("child-locator Test Page")', { timeout: 10000 })
+    const elementScrollButton = page.getByRole('button', { name: 'Element scroll' })
+    await elementScrollButton.waitFor({ timeout: 10000 })
+    if (!(await elementScrollButton.isDisabled())) {
+      await elementScrollButton.click()
+    }
     await page.waitForSelector('[data-testid^="Item-"]', { timeout: 10000 })
+    await page.waitForSelector('[data-testid="detected-item"]', { timeout: 10000 })
     
     // Wait for child-locator initialization
     await page.waitForTimeout(500)
@@ -15,7 +20,7 @@ test.describe('Child Locator - Scroll Detection', () => {
     console.log('=== Scroll Detection Test ===')
     
     // Get the scrollable container
-    const scrollContainer = page.locator('div[style*="overflow: auto"]').first()
+    const scrollContainer = page.locator('[data-testid="grid-container"]').first()
     
     // First test - position mouse on visible item before scrolling
     const visibleItem = page.locator('[data-testid="Item-2-2"]')
@@ -27,21 +32,21 @@ test.describe('Child Locator - Scroll Detection', () => {
       await page.mouse.move(300, 400)
       await page.waitForTimeout(300)
       
-      const initialDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+      const initialDetected = await page.locator('[data-testid="detected-item"]').textContent()
       console.log(`Initial detection: ${initialDetected}`)
       
       // Test scrolling functionality
       await scrollContainer.evaluate(el => el.scrollTop = 100)
       await page.waitForTimeout(400)
       
-      const scrolledDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+      const scrolledDetected = await page.locator('[data-testid="detected-item"]').textContent()
       console.log(`After scroll: ${scrolledDetected}`)
       
       // Reset scroll
       await scrollContainer.evaluate(el => el.scrollTop = 0)
       await page.waitForTimeout(400)
       
-      const resetDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+      const resetDetected = await page.locator('[data-testid="detected-item"]').textContent()
       console.log(`After reset: ${resetDetected}`)
       
       console.log('✅ Scroll operations test completed')
@@ -62,7 +67,7 @@ test.describe('Child Locator - Scroll Detection', () => {
     await page.mouse.move(centerX, centerY)
     await page.waitForTimeout(400)
     
-    const initialDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+    const initialDetected = await page.locator('[data-testid="detected-item"]').textContent()
     console.log(`Initial detection: ${initialDetected}`)
     
     // Verify initial detection
@@ -78,7 +83,7 @@ test.describe('Child Locator - Scroll Detection', () => {
     await scrollContainer.evaluate(el => el.scrollTop = 150)
     await page.waitForTimeout(400)
     
-    const scrolledDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+    const scrolledDetected = await page.locator('[data-testid="detected-item"]').textContent()
     console.log(`Detection after scroll: ${scrolledDetected}`)
     
     // Test scroll back up
@@ -86,7 +91,7 @@ test.describe('Child Locator - Scroll Detection', () => {
     await scrollContainer.evaluate(el => el.scrollTop = 0)
     await page.waitForTimeout(400)
     
-    const resetDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+    const resetDetected = await page.locator('[data-testid="detected-item"]').textContent()
     console.log(`Detection after reset: ${resetDetected}`)
     
     console.log('✅ Scroll detection test completed')
@@ -96,13 +101,13 @@ test.describe('Child Locator - Scroll Detection', () => {
     console.log('=== Rapid Scroll Test ===')
     
     // Get the scrollable container
-    const scrollContainer = page.locator('div[style*="overflow: auto"]').first()
+    const scrollContainer = page.locator('[data-testid="grid-container"]').first()
     
     // Position mouse in a stable area
     await page.mouse.move(300, 400)
     await page.waitForTimeout(300)
     
-    const initialDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+    const initialDetected = await page.locator('[data-testid="detected-item"]').textContent()
     console.log(`Initial detection at (300, 400): ${initialDetected}`)
     
     // Rapid scroll test - multiple scroll positions quickly
@@ -114,8 +119,8 @@ test.describe('Child Locator - Scroll Detection', () => {
       await scrollContainer.evaluate((el, pos) => el.scrollTop = pos, scrollPos)
       await page.waitForTimeout(200) // Short wait for rapid test
       
-      const detectedText = await page.locator('p:has-text("Detected Item:")').textContent()
-      const mouseCoordText = await page.locator('p:has-text("Mouse Coordinates:")').textContent()
+      const detectedText = await page.locator('[data-testid="detected-item"]').textContent()
+      const mouseCoordText = await page.locator('[data-testid="mouse-coordinates"]').textContent()
       
       console.log(`  Scroll ${scrollPos}px: ${detectedText}`)
       
@@ -135,7 +140,7 @@ test.describe('Child Locator - Scroll Detection', () => {
     console.log('=== Horizontal Scroll Test ===')
     
     // Get the scrollable container
-    const scrollContainer = page.locator('div[style*="overflow: auto"]').first()
+    const scrollContainer = page.locator('[data-testid="grid-container"]').first()
     
     // Check if horizontal scroll is available
     const scrollInfo = await scrollContainer.evaluate(el => ({
@@ -156,21 +161,21 @@ test.describe('Child Locator - Scroll Detection', () => {
       await page.mouse.move(400, 300)
       await page.waitForTimeout(300)
       
-      const initialDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+      const initialDetected = await page.locator('[data-testid="detected-item"]').textContent()
       console.log(`Before horizontal scroll: ${initialDetected}`)
       
       // Scroll right
       await scrollContainer.evaluate(el => el.scrollLeft = 100)
       await page.waitForTimeout(400)
       
-      const scrolledDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+      const scrolledDetected = await page.locator('[data-testid="detected-item"]').textContent()
       console.log(`After horizontal scroll: ${scrolledDetected}`)
       
       // Reset horizontal scroll
       await scrollContainer.evaluate(el => el.scrollLeft = 0)
       await page.waitForTimeout(400)
       
-      const resetDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+      const resetDetected = await page.locator('[data-testid="detected-item"]').textContent()
       console.log(`After horizontal reset: ${resetDetected}`)
       
     } else {
@@ -184,7 +189,7 @@ test.describe('Child Locator - Scroll Detection', () => {
     console.log('=== Container Edge Scroll Test ===')
     
     // Get the scrollable container
-    const scrollContainer = page.locator('div[style*="overflow: auto"]').first()
+    const scrollContainer = page.locator('[data-testid="grid-container"]').first()
     const containerBox = await scrollContainer.boundingBox()
     
     if (!containerBox) {
@@ -223,7 +228,7 @@ test.describe('Child Locator - Scroll Detection', () => {
         await scrollContainer.evaluate((el, scroll) => el.scrollTop = scroll, scrollPos)
         await page.waitForTimeout(200)
         
-        const detectedText = await page.locator('p:has-text("Detected Item:")').textContent()
+        const detectedText = await page.locator('[data-testid="detected-item"]').textContent()
         
         console.log(`    Scroll ${scrollPos}px: ${detectedText}`)
         
@@ -241,18 +246,24 @@ test.describe('Child Locator - Scroll Detection', () => {
     console.log('=== Smooth Scroll Test ===')
     
     // Get the scrollable container
-    const scrollContainer = page.locator('div[style*="overflow: auto"]').first()
-    
-    // Position mouse at a consistent location
-    await page.mouse.move(300, 400)
+    const scrollContainer = page.locator('[data-testid="grid-container"]').first()
+    const containerBox = await scrollContainer.boundingBox()
+    if (!containerBox) {
+      throw new Error('Grid container bounding box not found')
+    }
+
+    // Position mouse at a consistent location within the container bounds
+    const targetX = containerBox.x + Math.min(containerBox.width / 2, containerBox.width - 30)
+    const targetY = containerBox.y + Math.min(200, Math.max(30, containerBox.height / 2))
+    await page.mouse.move(targetX, targetY)
     await page.waitForTimeout(300)
-    
-    console.log('Mouse positioned at (300, 400)')
-    
+
+    console.log(`Mouse positioned at (${targetX.toFixed(1)}, ${targetY.toFixed(1)})`)
+
     // Perform smooth scroll with smaller increments
     const scrollSteps = 11 // 0, 25, 50, 75, 100, 125, 100, 75, 50, 25, 0
     const detections: string[] = []
-    
+
     for (let i = 0; i < scrollSteps; i++) {
       let scrollPos: number
       if (i <= 5) {
@@ -262,13 +273,16 @@ test.describe('Child Locator - Scroll Detection', () => {
       }
       
       console.log(`Step ${i + 1}: Scroll ${scrollPos}px`)
-      
+
       await scrollContainer.evaluate((el, pos) => el.scrollTop = pos, scrollPos)
       await page.waitForTimeout(300)
-      
-      const detectedText = await page.locator('p:has-text("Detected Item:")').textContent()
+      // Reposition mouse to mitigate layout shifts during scroll
+      await page.mouse.move(targetX, targetY)
+      await page.waitForTimeout(120)
+
+      const detectedText = await page.locator('[data-testid="detected-item"]').textContent()
       detections.push(detectedText || 'None')
-      
+
       console.log(`  ${i + 1}: ${detectedText}`)
     }
     
@@ -285,10 +299,11 @@ test.describe('Child Locator - Scroll Detection', () => {
     )
     
     console.log(`Valid detections: ${validDetections.length}/${detections.length}`)
-    
-    // More reasonable expectation - at least 30% valid detections
-    expect(validDetections.length).toBeGreaterThanOrEqual(Math.floor(detections.length * 0.3))
-    
+
+    // Expect at least one valid detection; if multiple samples exist require ~30% pass rate
+    const minimumValid = Math.max(1, Math.floor(detections.length * 0.3))
+    expect(validDetections.length).toBeGreaterThanOrEqual(minimumValid)
+
     console.log('✅ Smooth scroll test completed')
   })
 }) 

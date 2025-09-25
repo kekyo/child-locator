@@ -18,8 +18,13 @@ test.describe('Child Locator - Boundary Validation', () => {
   test.beforeEach(async ({ page }) => {
     // Load the actual React app with child-locator
     await page.goto('http://localhost:59517/')
-    await page.waitForSelector('h1:has-text("child-locator Test Page")', { timeout: 10000 })
+    const elementScrollButton = page.getByRole('button', { name: 'Element scroll' })
+    await elementScrollButton.waitFor({ timeout: 10000 })
+    if (!(await elementScrollButton.isDisabled())) {
+      await elementScrollButton.click()
+    }
     await page.waitForSelector('[data-testid^="Item-"]', { timeout: 10000 })
+    await page.waitForSelector('[data-testid="detected-item"]', { timeout: 10000 })
     
     // Wait for child-locator initialization
     await page.waitForTimeout(500)
@@ -92,7 +97,7 @@ test.describe('Child Locator - Boundary Validation', () => {
         await page.mouse.move(beforeBoundaryX, testY)
         await page.waitForTimeout(300)
         
-        const detectedBefore = await page.locator('p:has-text("Detected Item:")').textContent()
+        const detectedBefore = await page.locator('[data-testid="detected-item"]').textContent()
         console.log(`Near ${currentItem.name} center (${beforeBoundaryX}, ${testY.toFixed(1)}): ${detectedBefore}`)
         
         // More flexible validation - accept any valid item detection
@@ -109,7 +114,7 @@ test.describe('Child Locator - Boundary Validation', () => {
         await page.mouse.move(afterBoundaryX, testY)
         await page.waitForTimeout(300)
         
-        const detectedAfter = await page.locator('p:has-text("Detected Item:")').textContent()
+        const detectedAfter = await page.locator('[data-testid="detected-item"]').textContent()
         console.log(`Near ${nextItem.name} center (${afterBoundaryX}, ${testY.toFixed(1)}): ${detectedAfter}`)
         
         // More flexible validation
@@ -128,7 +133,7 @@ test.describe('Child Locator - Boundary Validation', () => {
     console.log('=== Scroll Consistency Test ===')
     
     // Get the scrollable container with a more specific selector
-    const scrollContainer = page.locator('div[style*="overflow: auto"]').first()
+    const scrollContainer = page.locator('[data-testid="grid-container"]').first()
     
     // Move mouse to a visible grid item first - using Item-2-2 instead of Item-3-2
     const targetItem = page.locator('[data-testid="Item-2-2"]')
@@ -148,7 +153,7 @@ test.describe('Child Locator - Boundary Validation', () => {
     await page.mouse.move(itemBox.x + itemBox.width / 2, itemBox.y + itemBox.height / 2)
     await page.waitForTimeout(400)
     
-    const initialDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+    const initialDetected = await page.locator('[data-testid="detected-item"]').textContent()
     console.log(`Initial detection: ${initialDetected}`)
     
     // Scroll down in the container
@@ -156,14 +161,14 @@ test.describe('Child Locator - Boundary Validation', () => {
     await page.waitForTimeout(400)
     
     // The mouse is still at the same screen position, but content has scrolled
-    const scrolledDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+    const scrolledDetected = await page.locator('[data-testid="detected-item"]').textContent()
     console.log(`Detection after scroll: ${scrolledDetected}`)
     
     // Reset scroll position
     await scrollContainer.evaluate(el => el.scrollTop = 0)
     await page.waitForTimeout(400)
     
-    const resetDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+    const resetDetected = await page.locator('[data-testid="detected-item"]').textContent()
     console.log(`Detection after scroll reset: ${resetDetected}`)
     
     // More flexible validation - expect some valid detection
@@ -176,7 +181,7 @@ test.describe('Child Locator - Boundary Validation', () => {
     console.log('=== Edge Cases Test ===')
     
     // Get container bounds with more specific selector
-    const container = page.locator('div[style*="overflow: auto"]').first()
+    const container = page.locator('[data-testid="grid-container"]').first()
     const containerBox = await container.boundingBox()
     if (!containerBox) {
       throw new Error('Container not found')
@@ -209,8 +214,8 @@ test.describe('Child Locator - Boundary Validation', () => {
       await page.mouse.move(pos.x, pos.y)
       await page.waitForTimeout(300)
       
-      const detectedText = await page.locator('p:has-text("Detected Item:")').textContent()
-      const boundsText = await page.locator('p:has-text("Element Bounds:")').textContent()
+      const detectedText = await page.locator('[data-testid="detected-item"]').textContent()
+      const boundsText = await page.locator('[data-testid="element-bounds"]').textContent()
       
       console.log(`Detection at ${pos.name}: ${detectedText}`)
       console.log(`Bounds: ${boundsText}`)

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
-const DETECTED_TEXT_LOCATOR = 'p:has-text("Detected Item:")'
-const SCROLL_CONTAINER_SELECTOR = 'div[style*="overflow: auto"]'
+const DETECTED_TEXT_LOCATOR = '[data-testid="detected-item"]'
+const SCROLL_CONTAINER_SELECTOR = '[data-testid="grid-container"]'
 
 async function moveMouseAndWait(
   page: import('@playwright/test').Page,
@@ -15,10 +15,13 @@ async function moveMouseAndWait(
 test.describe('Child Locator - Nested Element Detection', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:59517/')
-    await page.waitForSelector('h1:has-text("child-locator Test Page")', {
-      timeout: 10000,
-    })
+    const elementScrollButton = page.getByRole('button', { name: 'Element scroll' })
+    await elementScrollButton.waitFor({ timeout: 10000 })
+    if (!(await elementScrollButton.isDisabled())) {
+      await elementScrollButton.click()
+    }
     await page.waitForSelector('[data-testid^="Item-"]', { timeout: 10000 })
+    await page.waitForSelector(DETECTED_TEXT_LOCATOR, { timeout: 10000 })
     await page.waitForTimeout(500)
   })
 
