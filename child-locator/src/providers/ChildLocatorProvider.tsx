@@ -5,14 +5,7 @@
 
 import React from 'react';
 import { TetherProvider } from 'react-attractor';
-
-/**
- * Provider component for child-locator functionality
- * This wraps react-attractor's TetherProvider to provide a child-locator specific API
- */
-export interface ChildLocatorProviderProps {
-  children: React.ReactNode;
-}
+import { ChildLocatorProviderProps } from '../types';
 
 /**
  * Provider that enables child component location tracking

@@ -3,7 +3,7 @@
 // Under MIT.
 // https://github.com/kekyo/child-locator/
 
-import type { CSSUnitValue } from '../types/useLocator';
+import type { CSSUnitValue } from '../types';
 
 /**
  * Class for managing invisible elements

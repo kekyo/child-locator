@@ -87,7 +87,7 @@ BaseNestedItem.displayName = 'BaseNestedItem';
 
 const NestedItem = withChildLocator(BaseNestedItem);
 
-function App() {
+const App = () => {
   const [mouseOffset, setMouseOffset] = useState<{ x: number; y: number }>({
     x: 0,
     y: 0,
@@ -354,6 +354,6 @@ function App() {
       </div>
     </div>
   );
-}
+};
 
 export default App;

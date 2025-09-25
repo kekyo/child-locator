@@ -55,3 +55,19 @@ export interface UseLocatorOptions {
   /** Optional scroll container reference for scroll-container-relative coordinate calculation */
   scrollContainerRef?: RefObject<HTMLElement | null>;
 }
+
+/**
+ * Provider component for child-locator functionality
+ * This wraps react-attractor's TetherProvider to provide a child-locator specific API
+ */
+export interface ChildLocatorProviderProps {
+  children: React.ReactNode;
+}
+
+/**
+ * Props automatically injected by withChildLocator
+ */
+export interface WithChildLocatorProps {
+  /** Metadata for tracking this component */
+  tetherMetadata?: ChildLocatorMetadata;
+}

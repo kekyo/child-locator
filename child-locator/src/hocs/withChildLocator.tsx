@@ -5,15 +5,7 @@
 
 import React from 'react';
 import { withTether } from 'react-attractor';
-import type { ChildLocatorMetadata } from '../types/useLocator';
-
-/**
- * Props automatically injected by withChildLocator
- */
-export interface WithChildLocatorProps {
-  /** Metadata for tracking this component */
-  tetherMetadata?: ChildLocatorMetadata;
-}
+import type { WithChildLocatorProps } from '../types';
 
 /**
  * Higher-Order Component that enables a component to be tracked by child-locator
