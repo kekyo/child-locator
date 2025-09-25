@@ -1,6 +1,14 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from 'react';
 import { useLocator, withChildLocator } from 'child-locator';
 import type { DetectedComponent } from 'child-locator';
+
+/////////////////////////////////////////////////////////////////////////////
 
 interface GridItem {
   id: string;
@@ -50,6 +58,8 @@ BaseGridItem.displayName = 'BaseGridItem';
 
 const GridItem = withChildLocator(BaseGridItem);
 
+/////////////////////////////////////////////////////////////////////////////
+
 const BaseNestedItem = React.forwardRef<
   HTMLDivElement,
   {
@@ -87,34 +97,58 @@ BaseNestedItem.displayName = 'BaseNestedItem';
 
 const NestedItem = withChildLocator(BaseNestedItem);
 
-function App() {
+/////////////////////////////////////////////////////////////////////////////
+
+type LocatorVariant = 'Element scroll' | 'Window scroll';
+
+const LocatorTestPage: React.FC<{ variant: LocatorVariant }> = ({
+  variant,
+}) => {
+  const useWindowScroll = variant === 'Window scroll';
   const [mouseOffset, setMouseOffset] = useState<{ x: number; y: number }>({
     x: 0,
     y: 0,
   });
   const [detected, setDetected] = useState<DetectedComponent | null>(null);
-  const childrenCount = 30; // 30 items in 3x10 grid
   const containerRef = useRef<HTMLDivElement>(null);
   const innerContainerRef = useRef<HTMLDivElement>(null);
   const lastMouseEventRef = useRef<{ clientX: number; clientY: number } | null>(
     null
   );
 
-  // Use child-locator for component detection (using innerContainerRef)
-  useLocator(innerContainerRef, {
-    offset: mouseOffset,
-    onDetect: (detectedComponent) => {
+  const gridItems = useMemo(() => {
+    const items: GridItem[] = [];
+    // Build rows (10) first so Y coordinates increment downward
+    for (let row = 0; row < 10; row++) {
+      // Inner loop covers 3 columns; combined with row loop gives 30 items
+      for (let col = 0; col < 3; col++) {
+        const id = `Item-${row + 1}-${col + 1}`;
+        items.push({
+          id,
+          row,
+          col,
+          x: col * 200,
+          y: row * 150,
+        });
+      }
+    }
+    return items;
+  }, []);
+  const childrenCount = gridItems.length; // 30 items in 3x10 grid
+
+  const handleDetect = useCallback(
+    (detectedComponent: DetectedComponent) => {
       setDetected(detectedComponent);
     },
-    enabled: true,
-    scrollContainerRef: containerRef,
-  });
+    [setDetected]
+  );
 
   // Unified coordinate calculation
   const calculateMouseOffset = useCallback(
     (clientX: number, clientY: number) => {
       const rect = containerRef.current?.getBoundingClientRect();
       const innerRect = innerContainerRef.current?.getBoundingClientRect();
+      // Bail out if the layout metrics are unavailable (container not rendered yet)
       if (!rect || !innerRect) return null;
 
       // Calculate coordinates relative to innerContainer
@@ -126,9 +160,17 @@ function App() {
     []
   );
 
+  useLocator(innerContainerRef, {
+    offset: mouseOffset,
+    onDetect: handleDetect,
+    enabled: true,
+    scrollContainerRef: useWindowScroll ? undefined : containerRef,
+  });
+
   // Update coordinates on scroll
   useEffect(() => {
     const handleScroll = () => {
+      // Without a previously tracked mouse event we cannot rebuild the offset
       if (!lastMouseEventRef.current) return;
 
       const newOffset = calculateMouseOffset(
@@ -140,28 +182,20 @@ function App() {
       }
     };
 
+    if (useWindowScroll) {
+      window.addEventListener('scroll', handleScroll);
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+      };
+    }
+
     const container = containerRef.current;
     container?.addEventListener('scroll', handleScroll);
 
     return () => {
       container?.removeEventListener('scroll', handleScroll);
     };
-  }, [calculateMouseOffset]);
-
-  // Generate 3x10 grid data
-  const gridItems: GridItem[] = [];
-  for (let row = 0; row < 10; row++) {
-    for (let col = 0; col < 3; col++) {
-      const id = `Item-${row + 1}-${col + 1}`;
-      gridItems.push({
-        id,
-        row,
-        col,
-        x: col * 200,
-        y: row * 150,
-      });
-    }
-  }
+  }, [calculateMouseOffset, useWindowScroll]);
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     // Record last mouse position
@@ -171,61 +205,110 @@ function App() {
     };
 
     const newOffset = calculateMouseOffset(event.clientX, event.clientY);
+    // Skip state updates when the cursor falls outside the container bounds
     if (newOffset) {
       setMouseOffset(newOffset);
     }
   };
 
-  return (
-    <div
-      style={{
-        fontFamily: 'Arial, sans-serif',
-        padding: '20px',
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <h1>child-locator Test Page - 3x10 Grid</h1>
+  const outerStyle: React.CSSProperties = {
+    padding: '10px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    ...(useWindowScroll ? { minHeight: '100vh' } : { height: '100vh' }),
+  };
 
-      {/* child-locator detection results display area */}
-      <div
-        style={{
-          backgroundColor: '#f0f0f0',
-          padding: '15px',
-          borderRadius: '5px',
-          marginBottom: '20px',
-          minHeight: '100px',
-        }}
-      >
-        <h3>child-locator Detection Information:</h3>
-        <div>
+  const containerStyle: React.CSSProperties = useWindowScroll
+    ? {
+        width: '100%',
+        border: '2px solid #333',
+        position: 'relative',
+        backgroundColor: '#fafafa80',
+        marginTop: '16px',
+      }
+    : {
+        width: '100%',
+        height: '500px',
+        border: '2px solid #333',
+        overflow: 'auto',
+        position: 'relative',
+        backgroundColor: '#fafafa80',
+      };
+
+  const infoWrapperStyle: React.CSSProperties = useWindowScroll
+    ? {
+        position: 'sticky',
+        top: '10px',
+        zIndex: 10,
+        display: 'grid',
+        gap: '10px',
+        padding: '12px 15px',
+        borderRadius: '8px',
+        backgroundColor: 'rgba(240, 240, 240, 0.92)',
+        boxShadow: '0 10px 20px rgba(0, 0, 0, 0.08)',
+        backdropFilter: 'blur(4px)',
+        marginBottom: '10px',
+      }
+    : {
+        display: 'grid',
+        gap: '10px',
+        padding: '0 5px',
+        marginBottom: '10px',
+      };
+
+  const infoPanelStyle: React.CSSProperties = {
+    backgroundColor: '#f0f0f080',
+    padding: '10px 15px',
+    borderRadius: '5px',
+  };
+
+  return (
+    <div style={outerStyle}>
+      <div style={infoWrapperStyle}>
+        {/* Description */}
+        <div style={infoPanelStyle} data-testid="description-panel">
           <p>
-            <strong>Mouse Coordinates:</strong> X: {mouseOffset.x}px, Y:{' '}
-            {mouseOffset.y}px
+            <strong>Description:</strong>
           </p>
-          <p>
-            <strong>Managed Components Count:</strong> {childrenCount}
-          </p>
-          <p>
-            <strong>Detected Item:</strong>{' '}
-            {detected?.element
-              ? (() => {
-                  const testId = detected.element.getAttribute('data-testid');
-                  const elementText =
-                    detected.element.textContent?.split('\n')[0]; // Get the first line of text
-                  const displayName =
-                    testId || elementText || 'Unknown Element';
-                  return `${displayName} (Distance: ${detected.distanceFromOffset.toFixed(1)}px)`;
-                })()
-              : 'None'}
-          </p>
-          <p>
-            <strong>Element Bounds:</strong>{' '}
-            {detected?.bounds
-              ? `${detected.bounds.width.toFixed(0)}x${detected.bounds.height.toFixed(0)} at (${detected.bounds.x.toFixed(0)}, ${detected.bounds.y.toFixed(0)})`
-              : '(None)'}
-          </p>
+          <ul>
+            <li>3 columns x 10 rows grid is displayed</li>
+            <li>Blue borders make items easy to identify</li>
+            <li>Red dot indicates mouse position</li>
+          </ul>
+        </div>
+        {/* child-locator detection results display area */}
+        <div style={infoPanelStyle} data-testid="detection-summary">
+          <h3>child-locator Detection Information:</h3>
+          <ul>
+            <li data-testid="mouse-coordinates">
+              <strong>Mouse Coordinates:</strong> X: {mouseOffset.x}px, Y:{' '}
+              {mouseOffset.y}px
+            </li>
+            <li data-testid="managed-count">
+              <strong>Managed Components Count:</strong> {childrenCount}
+            </li>
+            <li data-testid="detected-item">
+              <strong>Detected Item:</strong>{' '}
+              {detected?.element
+                ? (() => {
+                    // Use data-testid when available; otherwise fall back to visible text
+                    const testId = detected.element.getAttribute('data-testid');
+                    const elementText =
+                      detected.element.textContent?.split('\n')[0]; // Get the first line of text
+                    const displayName =
+                      testId || elementText || 'Unknown Element';
+                    return `${displayName} (Distance: ${detected.distanceFromOffset.toFixed(1)}px)`;
+                  })()
+                : 'None'}
+            </li>
+            <li data-testid="element-bounds">
+              <strong>Element Bounds:</strong>{' '}
+              {detected?.bounds
+                ? `${detected.bounds.width.toFixed(0)}x${detected.bounds.height.toFixed(0)} at (${detected.bounds.x.toFixed(0)}, ${detected.bounds.y.toFixed(0)})`
+                : '(None)'}
+            </li>
+          </ul>
         </div>
       </div>
 
@@ -233,19 +316,13 @@ function App() {
       <div
         ref={containerRef}
         onMouseMove={handleMouseMove}
-        style={{
-          width: '100%',
-          height: '500px',
-          border: '2px solid #333',
-          overflow: 'auto',
-          position: 'relative',
-          backgroundColor: '#fafafa',
-        }}
+        style={containerStyle}
+        data-testid="grid-container"
       >
         <div
           ref={innerContainerRef}
           style={{
-            width: '600px',
+            width: '700px',
             height: '1800px',
             position: 'relative',
           }}
@@ -267,6 +344,7 @@ function App() {
           />
 
           {gridItems.map((item) => (
+            // Each GridItem registers itself with child-locator via the HOC and exposes metadata
             <GridItem
               key={item.id}
               item={item}
@@ -327,33 +405,60 @@ function App() {
           </div>
         </div>
       </div>
-
-      <div
-        style={{
-          marginTop: '15px',
-          fontSize: '14px',
-          color: '#666',
-        }}
-      >
-        <p>
-          <strong>Description:</strong>
-        </p>
-        <ul>
-          <li>3 columns x 10 rows grid is displayed</li>
-          <li>Blue borders make items easy to identify</li>
-          <li>Red dot indicates mouse position</li>
-          <li>
-            <strong>child-locator library</strong> detects elements based on
-            coordinates
-          </li>
-          <li>
-            Detailed information of detected elements is displayed at the top
-          </li>
-          <li>You can scroll within the area</li>
-        </ul>
-      </div>
     </div>
   );
-}
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
+const App = () => {
+  const [activePage, setActivePage] =
+    useState<LocatorVariant>('Element scroll');
+
+  const renderToggleButton = (variant: LocatorVariant) => {
+    const isActive = activePage === variant;
+    return (
+      <button
+        key={variant}
+        type="button"
+        onClick={() => setActivePage(variant)}
+        disabled={isActive}
+        style={{
+          padding: '8px 16px',
+          borderRadius: '6px',
+          border: isActive ? '2px solid #0066cc' : '1px solid #ccc',
+          backgroundColor: isActive ? '#0066cc' : '#ffffff',
+          color: isActive ? '#ffffff' : '#333333',
+          cursor: isActive ? 'default' : 'pointer',
+          fontWeight: isActive ? 600 : 500,
+        }}
+      >
+        {variant}
+      </button>
+    );
+  };
+
+  return (
+    <div>
+      <div
+        style={{
+          padding: '16px 20px',
+          borderBottom: '1px solid #dddddd80',
+          backgroundColor: '#f7f7f780',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <strong>Choose test page:</strong>
+        {(['Element scroll', 'Window scroll'] as LocatorVariant[]).map(
+          renderToggleButton
+        )}
+      </div>
+      <LocatorTestPage variant={activePage} />
+    </div>
+  );
+};
 
 export default App;

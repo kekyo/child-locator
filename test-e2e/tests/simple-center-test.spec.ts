@@ -4,8 +4,14 @@ test.describe('Child Locator - Simple Center Test', () => {
   test.beforeEach(async ({ page }) => {
     // Load the actual React app with child-locator
     await page.goto('http://localhost:59517/')
-    await page.waitForSelector('h1:has-text("child-locator Test Page")', { timeout: 10000 })
+    const elementScrollButton = page.getByRole('button', { name: 'Element scroll' })
+    await elementScrollButton.waitFor({ timeout: 10000 })
+    if (!(await elementScrollButton.isDisabled())) {
+      await elementScrollButton.click()
+    }
+
     await page.waitForSelector('[data-testid^="Item-"]', { timeout: 10000 })
+    await page.waitForSelector('[data-testid="detected-item"]', { timeout: 10000 })
     
     // Wait for child-locator initialization
     await page.waitForTimeout(500)
@@ -43,9 +49,9 @@ test.describe('Child Locator - Simple Center Test', () => {
         await page.waitForTimeout(300)
         
         // Check child-locator detection
-        const detectedText = await page.locator('p:has-text("Detected Item:")').textContent()
-        const mouseCoordText = await page.locator('p:has-text("Mouse Coordinates:")').textContent()
-        const boundsText = await page.locator('p:has-text("Element Bounds:")').textContent()
+        const detectedText = await page.locator('[data-testid="detected-item"]').textContent()
+        const mouseCoordText = await page.locator('[data-testid="mouse-coordinates"]').textContent()
+        const boundsText = await page.locator('[data-testid="element-bounds"]').textContent()
         
         console.log(`Detection result: ${detectedText}`)
         console.log(`Mouse coordinates: ${mouseCoordText}`)
@@ -86,7 +92,7 @@ test.describe('Child Locator - Simple Center Test', () => {
       await page.mouse.move(centerX, centerY)
       await page.waitForTimeout(300)
       
-      const detectedText = await page.locator('p:has-text("Detected Item:")').textContent()
+      const detectedText = await page.locator('[data-testid="detected-item"]').textContent()
       
       console.log(`Detection at center: ${detectedText}`)
       

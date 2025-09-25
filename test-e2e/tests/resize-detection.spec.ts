@@ -4,8 +4,13 @@ test.describe('Child Locator - Resize Detection', () => {
   test.beforeEach(async ({ page }) => {
     // Load the actual React app with child-locator
     await page.goto('http://localhost:59517/')
-    await page.waitForSelector('h1:has-text("child-locator Test Page")', { timeout: 10000 })
+    const elementScrollButton = page.getByRole('button', { name: 'Element scroll' })
+    await elementScrollButton.waitFor({ timeout: 10000 })
+    if (!(await elementScrollButton.isDisabled())) {
+      await elementScrollButton.click()
+    }
     await page.waitForSelector('[data-testid^="Item-"]', { timeout: 10000 })
+    await page.waitForSelector('[data-testid="detected-item"]', { timeout: 10000 })
     
     // Wait for child-locator initialization
     await page.waitForTimeout(500)
@@ -27,14 +32,14 @@ test.describe('Child Locator - Resize Detection', () => {
       await page.mouse.move(300, 400)
       await page.waitForTimeout(300)
       
-      const initialDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+      const initialDetected = await page.locator('[data-testid="detected-item"]').textContent()
       console.log(`Initial detection: ${initialDetected}`)
       
       // Test resize
       await page.setViewportSize({ width: 1100, height: 700 })
       await page.waitForTimeout(500)
       
-      const afterResize = await page.locator('p:has-text("Detected Item:")').textContent()
+      const afterResize = await page.locator('[data-testid="detected-item"]').textContent()
       console.log(`After resize: ${afterResize}`)
       
       // Should maintain some detection capability
@@ -59,14 +64,14 @@ test.describe('Child Locator - Resize Detection', () => {
     await page.mouse.move(centerX, centerY)
     await page.waitForTimeout(400)
     
-    const initialDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+    const initialDetected = await page.locator('[data-testid="detected-item"]').textContent()
     console.log(`Initial detection: ${initialDetected}`)
     
     console.log('\n--- Resizing window smaller ---')
     await page.setViewportSize({ width: 1100, height: 600 })
     await page.waitForTimeout(500)
     
-    const afterSmallResize = await page.locator('p:has-text("Detected Item:")').textContent()
+    const afterSmallResize = await page.locator('[data-testid="detected-item"]').textContent()
     console.log(`Detection after small resize: ${afterSmallResize}`)
     
     // Should maintain some detection
@@ -79,7 +84,7 @@ test.describe('Child Locator - Resize Detection', () => {
     await page.setViewportSize({ width: 1400, height: 800 })
     await page.waitForTimeout(500)
     
-    const afterLargeResize = await page.locator('p:has-text("Detected Item:")').textContent()
+    const afterLargeResize = await page.locator('[data-testid="detected-item"]').textContent()
     console.log(`Detection after large resize: ${afterLargeResize}`)
     
     // Should maintain some detection
@@ -94,7 +99,7 @@ test.describe('Child Locator - Resize Detection', () => {
     console.log('=== Container Resize Test ===')
     
     // Get the container
-    const container = page.locator('div[style*="overflow: auto"]').first()
+    const container = page.locator('[data-testid="grid-container"]').first()
     const initialContainer = await container.boundingBox()
     
     if (!initialContainer) {
@@ -107,7 +112,7 @@ test.describe('Child Locator - Resize Detection', () => {
     await page.mouse.move(300, 400)
     await page.waitForTimeout(300)
     
-    const beforeResize = await page.locator('p:has-text("Detected Item:")').textContent()
+    const beforeResize = await page.locator('[data-testid="detected-item"]').textContent()
     console.log(`Before resize: ${beforeResize}`)
     
     // Test different resize scenarios
@@ -123,8 +128,8 @@ test.describe('Child Locator - Resize Detection', () => {
       await page.setViewportSize({ width: resize.width, height: resize.height })
       await page.waitForTimeout(400)
       
-      const detectedText = await page.locator('p:has-text("Detected Item:")').textContent()
-      const mouseCoordText = await page.locator('p:has-text("Mouse Coordinates:")').textContent()
+      const detectedText = await page.locator('[data-testid="detected-item"]').textContent()
+      const mouseCoordText = await page.locator('[data-testid="mouse-coordinates"]').textContent()
       
       console.log(`Detection: ${detectedText}`)
       console.log(`Mouse coordinates: ${mouseCoordText}`)
@@ -148,7 +153,7 @@ test.describe('Child Locator - Resize Detection', () => {
     await page.mouse.move(300, 400)
     await page.waitForTimeout(300)
     
-    const initialDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+    const initialDetected = await page.locator('[data-testid="detected-item"]').textContent()
     console.log(`Initial detection: ${initialDetected}`)
     
     // Rapid resize sequence
@@ -166,7 +171,7 @@ test.describe('Child Locator - Resize Detection', () => {
       await page.setViewportSize({ width: resize.width, height: resize.height })
       await page.waitForTimeout(200) // Short wait for rapid test
       
-      const detectedText = await page.locator('p:has-text("Detected Item:")').textContent()
+      const detectedText = await page.locator('[data-testid="detected-item"]').textContent()
       console.log(`Rapid resize ${index + 1}: ${detectedText}`)
       
       // Should handle rapid changes gracefully
@@ -206,7 +211,7 @@ test.describe('Child Locator - Resize Detection', () => {
         await page.mouse.move(pos.x, pos.y)
         await page.waitForTimeout(200)
         
-        const detectedText = await page.locator('p:has-text("Detected Item:")').textContent()
+        const detectedText = await page.locator('[data-testid="detected-item"]').textContent()
         console.log(`  ${pos.name}: ${detectedText}`)
         
         // Should detect appropriately in all aspect ratios
@@ -240,7 +245,7 @@ test.describe('Child Locator - Resize Detection', () => {
     
     await page.waitForTimeout(300)
     
-    const initialDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+    const initialDetected = await page.locator('[data-testid="detected-item"]').textContent()
     console.log(`Initial detection at 100% zoom: ${initialDetected}`)
     
     // Test different zoom levels
@@ -256,8 +261,8 @@ test.describe('Child Locator - Resize Detection', () => {
       
       await page.waitForTimeout(400)
       
-      const detectedText = await page.locator('p:has-text("Detected Item:")').textContent()
-      const mouseCoordText = await page.locator('p:has-text("Mouse Coordinates:")').textContent()
+      const detectedText = await page.locator('[data-testid="detected-item"]').textContent()
+      const mouseCoordText = await page.locator('[data-testid="mouse-coordinates"]').textContent()
       
       console.log(`Detection at ${zoom * 100}% zoom: ${detectedText}`)
       console.log(`Mouse coordinates: ${mouseCoordText}`)
@@ -280,7 +285,7 @@ test.describe('Child Locator - Resize Detection', () => {
     
     await page.waitForTimeout(300)
     
-    const finalDetected = await page.locator('p:has-text("Detected Item:")').textContent()
+    const finalDetected = await page.locator('[data-testid="detected-item"]').textContent()
     console.log(`Final detection after zoom reset: ${finalDetected}`)
     
     console.log('✅ Browser zoom test completed')

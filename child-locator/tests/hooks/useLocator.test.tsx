@@ -5,7 +5,7 @@
 
 import React, { useRef, useState } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   useLocator,
   ChildLocatorProvider,
@@ -287,6 +287,59 @@ describe('useLocator with ChildLocatorProvider', () => {
 
     // Detection should still work after scrolling
     expect(detectedComponents.length).toBeGreaterThan(0);
+  });
+
+  it('should fall back to the global scrolling element when none is provided', async () => {
+    const originalDescriptor = Object.getOwnPropertyDescriptor(
+      document,
+      'scrollingElement'
+    );
+    const scrollingElementGetter = vi.fn(() => document.documentElement);
+
+    Object.defineProperty(document, 'scrollingElement', {
+      configurable: true,
+      get: scrollingElementGetter,
+    });
+
+    const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
+
+    try {
+      render(
+        <ChildLocatorProvider>
+          <TestContainer
+            offset={{ x: '50%', y: '25%' }}
+            onDetect={mockOnDetect}
+          >
+            <TestChild id={1} height={80} />
+            <TestChild id={2} height={80} />
+          </TestContainer>
+        </ChildLocatorProvider>
+      );
+
+      await waitFor(() => {
+        expect(detectedComponents.length).toBeGreaterThan(0);
+      });
+
+      expect(scrollingElementGetter).toHaveBeenCalled();
+
+      const registeredScrollHandler = addEventListenerSpy.mock.calls.some(
+        ([eventName]) => eventName === 'scroll'
+      );
+      expect(registeredScrollHandler).toBe(true);
+
+      window.dispatchEvent(new Event('scroll'));
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    } finally {
+      addEventListenerSpy.mockRestore();
+
+      if (originalDescriptor) {
+        Object.defineProperty(document, 'scrollingElement', originalDescriptor);
+      } else {
+        delete (document as unknown as Record<string, unknown>)
+          .scrollingElement;
+      }
+    }
   });
 
   it('should retrieve component metadata from tethered elements', async () => {
