@@ -3,9 +3,12 @@
 // Under MIT.
 // https://github.com/kekyo/child-locator/
 
-import React from 'react';
 import { withTether } from 'react-attractor';
-import type { WithChildLocatorProps } from '../types';
+import type {
+  LocatorCompatibleComponent,
+  WithChildLocatorProps,
+} from '../types';
+import type { ComponentType } from 'react';
 
 /**
  * Higher-Order Component that enables a component to be tracked by child-locator
@@ -24,8 +27,13 @@ import type { WithChildLocatorProps } from '../types';
  * </TrackableItem>
  * ```
  */
-export const withChildLocator = <P extends object>(
-  Component: React.ComponentType<P>
-): React.ComponentType<P & WithChildLocatorProps> => {
-  return withTether(Component);
+type ComponentProps<C extends ComponentType<any>> =
+  C extends ComponentType<infer P> ? P : never;
+
+export const withChildLocator = <C extends ComponentType<any>>(
+  Component: LocatorCompatibleComponent<C>
+): ComponentType<ComponentProps<C> & WithChildLocatorProps> => {
+  return withTether(
+    Component as ComponentType<ComponentProps<C>>
+  ) as ComponentType<ComponentProps<C> & WithChildLocatorProps>;
 };

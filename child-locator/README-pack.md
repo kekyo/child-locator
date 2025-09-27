@@ -53,20 +53,21 @@ function Root() {
 Use `withChildLocator` to make components trackable:
 
 ```tsx
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { withChildLocator } from 'child-locator';
 import type { WithChildLocatorProps } from 'child-locator';
 
 // Base component (designed for your requirement)
-const BaseChildItem = ({
-  id,
-  children,
-}: {
-  id: number;
-  children: React.ReactNode;
-}) => {
+const BaseChildItem = forwardRef<
+  HTMLDivElement,
+  {
+    id: number;
+    children: React.ReactNode;
+  }
+>(({ id, children }, ref) => {
   return (
     <div
+      ref={ref}
       data-testid={`child-${id}`}
       style={{
         position: 'absolute',
@@ -81,11 +82,13 @@ const BaseChildItem = ({
       {children}
     </div>
   );
-};
+});
 
 // Make it trackable with child-locator
 const ChildItem = withChildLocator(BaseChildItem);
 ```
+
+> ℹ️ `withChildLocator` only accepts components that forward their `ref` to a DOM element (for example, ones created with `React.forwardRef`). Wrap plain function components with `forwardRef` before calling this HOC.
 
 ### 3. Use Detection Hook
 
