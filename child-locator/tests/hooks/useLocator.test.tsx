@@ -293,6 +293,139 @@ describe('useLocator with ChildLocatorProvider', () => {
     expect(detectedComponents.length).toBeGreaterThan(0);
   });
 
+  it('should keep detecting elements for percentage offsets during window scroll', async () => {
+    const scrollYDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      'scrollY'
+    );
+    const scrollXDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      'scrollX'
+    );
+    const innerHeightDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      'innerHeight'
+    );
+    const innerWidthDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      'innerWidth'
+    );
+
+    Object.defineProperty(window, 'scrollY', {
+      configurable: true,
+      value: 600,
+    });
+    Object.defineProperty(window, 'scrollX', { configurable: true, value: 0 });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 1024,
+    });
+
+    const elementsFromPointDescriptor = Object.getOwnPropertyDescriptor(
+      document,
+      'elementsFromPoint'
+    );
+
+    if (!elementsFromPointDescriptor) {
+      Object.defineProperty(document, 'elementsFromPoint', {
+        configurable: true,
+        writable: true,
+        value: ((x: number, y: number) => {
+          const single = document.elementFromPoint?.(x, y);
+          return single ? [single] : [];
+        }) as typeof document.elementsFromPoint,
+      });
+    }
+
+    const elementsFromPointMock = vi
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .spyOn(document as any, 'elementsFromPoint')
+      .mockReturnValue([]);
+
+    try {
+      render(
+        <ChildLocatorProvider>
+          <TestContainer offset={{ x: 0, y: 100 }} onDetect={mockOnDetect}>
+            <TestChild id={1} height={80} tetherMetadata={{ childId: 1 }} />
+            <TestChild id={2} height={80} tetherMetadata={{ childId: 2 }} />
+          </TestContainer>
+        </ChildLocatorProvider>
+      );
+
+      const container = screen.getByTestId('container');
+      // Simulate a statically positioned container (no inline position set)
+      container.style.position = '';
+
+      const containerRect = DOMRect.fromRect({
+        x: 0,
+        y: -600,
+        width: 400,
+        height: 2000,
+      });
+
+      vi.spyOn(container, 'getBoundingClientRect').mockReturnValue(
+        containerRect
+      );
+
+      const detectedChild = screen.getByTestId('child-2');
+      const childRect = DOMRect.fromRect({
+        x: 0,
+        y: 0,
+        width: 200,
+        height: 80,
+      });
+
+      vi.spyOn(detectedChild, 'getBoundingClientRect').mockReturnValue(
+        childRect
+      );
+
+      elementsFromPointMock.mockImplementation((x, y) => {
+        // Ensure the hook queries within the viewport rather than negative coordinates
+        expect(x).toBeGreaterThanOrEqual(0);
+        expect(y).toBeGreaterThanOrEqual(0);
+        expect(y).toBeLessThanOrEqual(window.innerHeight);
+        return [detectedChild];
+      });
+
+      await waitFor(() => {
+        expect(detectedComponents.length).toBeGreaterThan(0);
+      });
+
+      const lastDetected = detectedComponents[detectedComponents.length - 1];
+      expect(lastDetected?.element).toBe(detectedChild);
+    } finally {
+      elementsFromPointMock.mockRestore();
+
+      if (elementsFromPointDescriptor) {
+        Object.defineProperty(
+          document,
+          'elementsFromPoint',
+          elementsFromPointDescriptor
+        );
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (document as any).elementsFromPoint;
+      }
+
+      if (scrollYDescriptor) {
+        Object.defineProperty(window, 'scrollY', scrollYDescriptor);
+      }
+      if (scrollXDescriptor) {
+        Object.defineProperty(window, 'scrollX', scrollXDescriptor);
+      }
+      if (innerHeightDescriptor) {
+        Object.defineProperty(window, 'innerHeight', innerHeightDescriptor);
+      }
+      if (innerWidthDescriptor) {
+        Object.defineProperty(window, 'innerWidth', innerWidthDescriptor);
+      }
+    }
+  });
+
   it('should fall back to the global scrolling element when none is provided', async () => {
     const originalDescriptor = Object.getOwnPropertyDescriptor(
       document,

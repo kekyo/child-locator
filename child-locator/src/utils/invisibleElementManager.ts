@@ -58,20 +58,40 @@ export class InvisibleElementManager {
     this.invisibleElement.style.zIndex = '-1';
     this.invisibleElement.style.opacity = '0';
 
-    // Add to container
-    this.container.appendChild(this.invisibleElement);
+    const shouldForceRelative = (() => {
+      if (typeof window === 'undefined') {
+        return false;
+      }
+      const computedPosition = window.getComputedStyle(this.container!);
+      return computedPosition.position === 'static';
+    })();
 
-    // Force layout calculation
-    void this.container.offsetWidth;
+    const previousInlinePosition = this.container.style.position;
 
-    // Get position relative to container using offsetLeft and offsetTop
-    const rect = this.invisibleElement.getBoundingClientRect();
-    const containerRect = this.container.getBoundingClientRect();
+    if (shouldForceRelative) {
+      this.container.style.position = 'relative';
+    }
 
-    return {
-      x: rect.left - containerRect.left,
-      y: rect.top - containerRect.top,
-    };
+    try {
+      // Add to container
+      this.container.appendChild(this.invisibleElement);
+
+      // Force layout calculation
+      void this.container.offsetWidth;
+
+      // Get position relative to container using offsetLeft and offsetTop
+      const rect = this.invisibleElement.getBoundingClientRect();
+      const containerRect = this.container.getBoundingClientRect();
+
+      return {
+        x: rect.left - containerRect.left,
+        y: rect.top - containerRect.top,
+      };
+    } finally {
+      if (shouldForceRelative) {
+        this.container.style.position = previousInlinePosition;
+      }
+    }
   }
 
   /**
