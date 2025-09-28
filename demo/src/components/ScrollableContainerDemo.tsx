@@ -1,4 +1,4 @@
-import React, { forwardRef, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   useLocator,
   ChildLocatorProvider,
@@ -7,41 +7,32 @@ import {
 import type { DetectedComponent } from 'child-locator';
 
 // Tethered component for tracking
-const BaseMockComponent = forwardRef<
-  HTMLDivElement,
-  {
-    children: React.ReactNode;
-    height?: number;
-    backgroundColor?: string;
-    borderColor?: string;
-  }
->(
-  (
-    {
-      children,
-      height = 60,
-      backgroundColor = '#f0f0f0',
-      borderColor = '#ccc',
-    },
-    ref
-  ) => {
-    return (
-      <div
-        ref={ref}
-        style={{
-          height: `${height}px`,
-          backgroundColor,
-          border: `1px solid ${borderColor}`,
-          margin: '8px',
-          padding: '8px',
-          borderRadius: '4px',
-        }}
-      >
-        {children}
-      </div>
-    );
-  }
-);
+const BaseMockComponent: React.FC<{
+  children: React.ReactNode;
+  height?: number;
+  backgroundColor?: string;
+  borderColor?: string;
+}> = ({
+  children,
+  height = 60,
+  backgroundColor = '#f0f0f0',
+  borderColor = '#ccc',
+}) => {
+  return (
+    <div
+      style={{
+        height: `${height}px`,
+        backgroundColor,
+        border: `1px solid ${borderColor}`,
+        margin: '8px',
+        padding: '8px',
+        borderRadius: '4px',
+      }}
+    >
+      {children}
+    </div>
+  );
+};
 
 BaseMockComponent.displayName = 'BaseMockComponent';
 
