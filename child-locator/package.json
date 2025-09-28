@@ -24,17 +24,17 @@
     "pack": "npm run build && screw-up pack --pack-destination ../artifacts"
   },
   "dependencies": {
-    "react": ">=16.0.0",
+    "react": ">=16.8.0",
     "react-attractor": ">=0.5.0",
-    "react-dom": ">=16.0.0"
+    "react-dom": ">=16.8.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": ">=6.0.0",
     "@testing-library/react": ">=16.0.0",
     "@testing-library/user-event": ">=14.0.0",
     "@types/node": ">=22.0.0",
-    "@types/react": ">=16.0.0",
-    "@types/react-dom": ">=16.0.0",
+    "@types/react": ">=16.8.0",
+    "@types/react-dom": ">=16.8.0",
     "@vitejs/plugin-react": ">=5.0.0",
     "globals": ">=16.0.0",
     "jsdom": ">=26.0.0",
