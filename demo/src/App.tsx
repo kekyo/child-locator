@@ -6,7 +6,7 @@ import React, {
   useMemo,
 } from 'react';
 import { useLocator, withChildLocator } from 'child-locator';
-import type { DetectedComponent } from 'child-locator';
+import type { DetectedComponent, OffsetCoordinates } from 'child-locator';
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -100,12 +100,14 @@ const NestedItem = withChildLocator(BaseNestedItem);
 /////////////////////////////////////////////////////////////////////////////
 
 type LocatorVariant = 'Element scroll' | 'Window scroll';
+type OffsetMode = 'pointer' | 'anchor';
 
 const LocatorTestPage: React.FC<{ variant: LocatorVariant }> = ({
   variant,
 }) => {
   const useWindowScroll = variant === 'Window scroll';
-  const [mouseOffset, setMouseOffset] = useState<{ x: number; y: number }>({
+  const [offsetMode, setOffsetMode] = useState<OffsetMode>('pointer');
+  const [pointerOffset, setPointerOffset] = useState<OffsetCoordinates>({
     x: 0,
     y: 0,
   });
@@ -144,8 +146,8 @@ const LocatorTestPage: React.FC<{ variant: LocatorVariant }> = ({
   );
 
   // Unified coordinate calculation
-  const calculateMouseOffset = useCallback(
-    (clientX: number, clientY: number) => {
+  const calculatePointerOffset = useCallback(
+    (clientX: number, clientY: number): OffsetCoordinates | null => {
       const rect = containerRef.current?.getBoundingClientRect();
       const innerRect = innerContainerRef.current?.getBoundingClientRect();
       // Bail out if the layout metrics are unavailable (container not rendered yet)
@@ -159,9 +161,42 @@ const LocatorTestPage: React.FC<{ variant: LocatorVariant }> = ({
     },
     []
   );
+  const anchorOffset = useMemo<OffsetCoordinates>(
+    () => ({ x: '50%', y: '20%' }),
+    []
+  );
+
+  const effectiveOffset: OffsetCoordinates =
+    offsetMode === 'pointer' ? pointerOffset : anchorOffset;
+
+  const renderOffsetModeButton = useCallback(
+    (mode: OffsetMode, label: string) => {
+      const isActive = offsetMode === mode;
+      return (
+        <button
+          key={mode}
+          type="button"
+          onClick={() => setOffsetMode(mode)}
+          disabled={isActive}
+          style={{
+            padding: '6px 12px',
+            borderRadius: '6px',
+            border: isActive ? '2px solid #ad1457' : '1px solid #ccc',
+            backgroundColor: isActive ? '#ad1457' : '#ffffff',
+            color: isActive ? '#ffffff' : '#333333',
+            cursor: isActive ? 'default' : 'pointer',
+            fontWeight: isActive ? 600 : 500,
+          }}
+        >
+          {label}
+        </button>
+      );
+    },
+    [offsetMode, setOffsetMode]
+  );
 
   useLocator(innerContainerRef, {
-    offset: mouseOffset,
+    offset: effectiveOffset,
     onDetect: handleDetect,
     enabled: true,
     scrollContainerRef: useWindowScroll ? undefined : containerRef,
@@ -169,16 +204,20 @@ const LocatorTestPage: React.FC<{ variant: LocatorVariant }> = ({
 
   // Update coordinates on scroll
   useEffect(() => {
+    if (offsetMode !== 'pointer') {
+      return;
+    }
+
     const handleScroll = () => {
       // Without a previously tracked mouse event we cannot rebuild the offset
       if (!lastMouseEventRef.current) return;
 
-      const newOffset = calculateMouseOffset(
+      const newOffset = calculatePointerOffset(
         lastMouseEventRef.current.clientX,
         lastMouseEventRef.current.clientY
       );
       if (newOffset) {
-        setMouseOffset(newOffset);
+        setPointerOffset(newOffset);
       }
     };
 
@@ -195,19 +234,22 @@ const LocatorTestPage: React.FC<{ variant: LocatorVariant }> = ({
     return () => {
       container?.removeEventListener('scroll', handleScroll);
     };
-  }, [calculateMouseOffset, useWindowScroll]);
+  }, [calculatePointerOffset, offsetMode, useWindowScroll]);
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (offsetMode !== 'pointer') {
+      return;
+    }
     // Record last mouse position
     lastMouseEventRef.current = {
       clientX: event.clientX,
       clientY: event.clientY,
     };
 
-    const newOffset = calculateMouseOffset(event.clientX, event.clientY);
+    const newOffset = calculatePointerOffset(event.clientX, event.clientY);
     // Skip state updates when the cursor falls outside the container bounds
     if (newOffset) {
-      setMouseOffset(newOffset);
+      setPointerOffset(newOffset);
     }
   };
 
@@ -281,9 +323,27 @@ const LocatorTestPage: React.FC<{ variant: LocatorVariant }> = ({
         <div style={infoPanelStyle} data-testid="detection-summary">
           <h3>child-locator Detection Information:</h3>
           <ul>
+            <li data-testid="offset-mode">
+              <strong>Offset mode:</strong>{' '}
+              <span
+                style={{ display: 'inline-flex', gap: '6px', flexWrap: 'wrap' }}
+              >
+                {renderOffsetModeButton('pointer', 'Follow pointer')}
+                {renderOffsetModeButton('anchor', 'Viewport anchor')}
+              </span>
+            </li>
             <li data-testid="mouse-coordinates">
-              <strong>Mouse Coordinates:</strong> X: {mouseOffset.x}px, Y:{' '}
-              {mouseOffset.y}px
+              {offsetMode === 'pointer' ? (
+                <>
+                  <strong>Mouse Coordinates:</strong> X: {pointerOffset.x}px, Y:{' '}
+                  {pointerOffset.y}px
+                </>
+              ) : (
+                <>
+                  <strong>Viewport Anchor:</strong> X: {anchorOffset.x}, Y:{' '}
+                  {anchorOffset.y}
+                </>
+              )}
             </li>
             <li data-testid="managed-count">
               <strong>Managed Components Count:</strong> {childrenCount}
@@ -328,20 +388,39 @@ const LocatorTestPage: React.FC<{ variant: LocatorVariant }> = ({
           }}
         >
           {/* Mouse position indicator */}
-          <div
-            style={{
-              position: 'absolute',
-              left: `${mouseOffset.x}px`,
-              top: `${mouseOffset.y}px`,
-              width: '10px',
-              height: '10px',
-              backgroundColor: 'red',
-              borderRadius: '50%',
-              zIndex: 1000,
-              pointerEvents: 'none',
-              transform: 'translate(-50%, -50%)',
-            }}
-          />
+          {offsetMode === 'pointer' ? (
+            <div
+              style={{
+                position: 'absolute',
+                left: `${pointerOffset.x}px`,
+                top: `${pointerOffset.y}px`,
+                width: '10px',
+                height: '10px',
+                backgroundColor: 'red',
+                borderRadius: '50%',
+                zIndex: 1000,
+                pointerEvents: 'none',
+                transform: 'translate(-50%, -50%)',
+              }}
+            />
+          ) : null}
+          {offsetMode === 'anchor' ? (
+            <div
+              style={{
+                position: 'absolute',
+                left: anchorOffset.x,
+                top: anchorOffset.y,
+                width: '16px',
+                height: '16px',
+                borderRadius: '50%',
+                border: '2px dashed #ff7043',
+                backgroundColor: 'rgba(255, 112, 67, 0.25)',
+                transform: 'translate(-50%, -50%)',
+                pointerEvents: 'none',
+                zIndex: 1000,
+              }}
+            />
+          ) : null}
 
           {gridItems.map((item) => (
             // Each GridItem registers itself with child-locator via the HOC and exposes metadata

@@ -48,6 +48,37 @@ const isElementVisible = (element: HTMLElement): boolean => {
   return intersectsViewport;
 };
 
+interface ResolveViewportCoordinatesParams {
+  container: HTMLElement;
+  pixelOffset: { x: number; y: number };
+  scrollContainer: HTMLElement | null;
+  isWindowScroll: boolean;
+}
+
+const resolveViewportCoordinates = ({
+  container,
+  pixelOffset,
+  scrollContainer,
+  isWindowScroll,
+}: ResolveViewportCoordinatesParams): { x: number; y: number } => {
+  if (scrollContainer && !isWindowScroll) {
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const scrollLeft = scrollContainer.scrollLeft;
+    const scrollTop = scrollContainer.scrollTop;
+
+    return {
+      x: containerRect.left + pixelOffset.x - scrollLeft,
+      y: containerRect.top + pixelOffset.y - scrollTop,
+    };
+  }
+
+  const containerRect = container.getBoundingClientRect();
+  return {
+    x: containerRect.left + pixelOffset.x,
+    y: containerRect.top + pixelOffset.y,
+  };
+};
+
 /**
  * Locate the first tethered descendant that intersects the given offset within the container.
  * @param container - The root element whose descendants are inspected.
@@ -73,23 +104,14 @@ const findElementAtOffset = (
       return undefined;
     }
 
-    let targetX: number, targetY: number;
+    const containerRect = container.getBoundingClientRect();
 
-    // Calculate absolute viewport coordinates considering scroll container
-    if (scrollContainerRef?.current) {
-      // Use the supplied scroll container so offsets follow the caller's scrolling context
-      const containerRect = scrollContainerRef.current.getBoundingClientRect();
-      const scrollLeft = scrollContainerRef.current.scrollLeft;
-      const scrollTop = scrollContainerRef.current.scrollTop;
-
-      // Calculate coordinates relative to scroll container content
-      targetX = containerRect.left + pixelOffset.x - scrollLeft;
-      targetY = containerRect.top + pixelOffset.y - scrollTop;
-    } else {
-      const containerRect = container.getBoundingClientRect();
-      targetX = containerRect.left + pixelOffset.x;
-      targetY = containerRect.top + pixelOffset.y;
-    }
+    const { x: targetX, y: targetY } = resolveViewportCoordinates({
+      container,
+      pixelOffset,
+      scrollContainer: scrollContainerRef?.current ?? null,
+      isWindowScroll: !scrollContainerRef?.current,
+    });
 
     // Check if coordinates are within viewport bounds
     // Keep viewport hits fast; out-of-viewport detection is handled by the fallback path
@@ -142,7 +164,14 @@ const findElementAtOffset = (
     }
 
     // Fallback method: Use bounds checking for out-of-viewport coordinates
-    return findElementByBounds(container, targetX, targetY, getTether);
+    return findElementByBounds(
+      container,
+      targetX,
+      targetY,
+      pixelOffset,
+      containerRect,
+      getTether
+    );
   } finally {
     // Always restore DOM by removing the helper measurement nodes
     manager.cleanup();
@@ -161,6 +190,8 @@ const findElementByBounds = (
   container: HTMLElement,
   targetX: number,
   targetY: number,
+  pixelOffset: { x: number; y: number },
+  containerRect: DOMRect,
   getTether: GetTetherFn
 ): HTMLElement | undefined => {
   const descendants = container.querySelectorAll('*');
@@ -194,11 +225,22 @@ const findElementByBounds = (
 
     const rect = node.getBoundingClientRect();
 
-    const isWithinBounds =
+    const isWithinViewportBounds =
       targetX >= rect.left &&
       targetX <= rect.right &&
       targetY >= rect.top &&
       targetY <= rect.bottom;
+
+    const relativeLeft = rect.left - containerRect.left;
+    const relativeTop = rect.top - containerRect.top;
+
+    const isWithinContainerBounds =
+      pixelOffset.x >= relativeLeft &&
+      pixelOffset.x <= relativeLeft + rect.width &&
+      pixelOffset.y >= relativeTop &&
+      pixelOffset.y <= relativeTop + rect.height;
+
+    const isWithinBounds = isWithinViewportBounds || isWithinContainerBounds;
 
     if (isWithinBounds) {
       // Use the element's center point to determine the closest match
@@ -433,27 +475,18 @@ export const useLocator = (
             : null
         );
 
-        // Calculate target coordinates for distance measurement
-        let targetX: number, targetY: number;
         const pixelOffset = convertToPixels(
           containerRef.current,
           currentOffset.x,
           currentOffset.y
         );
 
-        if (currentScrollContainer && !isWindowScrollContainer) {
-          const containerRect = currentScrollContainer.getBoundingClientRect();
-          const scrollLeft = currentScrollContainer.scrollLeft;
-          const scrollTop = currentScrollContainer.scrollTop;
-
-          // Calculate coordinates relative to scroll container content
-          targetX = containerRect.left + pixelOffset.x - scrollLeft;
-          targetY = containerRect.top + pixelOffset.y - scrollTop;
-        } else {
-          const containerRect = containerRef.current.getBoundingClientRect();
-          targetX = containerRect.left + pixelOffset.x;
-          targetY = containerRect.top + pixelOffset.y;
-        }
+        const { x: targetX, y: targetY } = resolveViewportCoordinates({
+          container: containerRef.current,
+          pixelOffset,
+          scrollContainer: currentScrollContainer,
+          isWindowScroll: isWindowScrollContainer,
+        });
 
         let detectedComponent: DetectedComponent;
 
