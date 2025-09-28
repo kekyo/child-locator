@@ -8,8 +8,8 @@ import type {
   LocatorCompatibleComponent,
   WithChildLocatorProps,
 } from '../types';
-import type { ComponentType, CSSProperties, PropsWithoutRef } from 'react';
-import { forwardRef } from 'react';
+import type { ComponentType, CSSProperties, PropsWithoutRef, Ref } from 'react';
+import { forwardRef, useEffect, useLayoutEffect, useRef } from 'react';
 
 /**
  * Higher-Order Component that enables a component to be tracked by child-locator
@@ -35,20 +35,55 @@ type ComponentPropsWithoutRef<C extends ComponentType<any>> = PropsWithoutRef<
   ComponentProps<C>
 >;
 
+// Favor layout effect in the browser, but fall back to useEffect on the server.
+const useIsomorphicLayoutEffect =
+  typeof window === 'undefined' ? useEffect : useLayoutEffect;
+
 // Wrapper element acts as tether anchor without altering surrounding layout.
 const LOCATOR_WRAPPER_STYLE: CSSProperties = { display: 'contents' };
 
+// Support both callback refs and mutable ref objects without pulling in extra helpers.
+const assignRef = <T,>(ref: Ref<T>, value: T | null) => {
+  if (!ref) {
+    return;
+  }
+
+  if (typeof ref === 'function') {
+    ref(value);
+    return;
+  }
+
+  (ref as { current: T | null }).current = value;
+};
+
 const createFallbackWrapper = <C extends ComponentType<any>>(Component: C) => {
-  const Fallback = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<C>>(
-    (props, ref) => (
-      <div
-        ref={ref}
-        style={LOCATOR_WRAPPER_STYLE}
-        data-child-locator-wrapper=""
-      >
-        <Component {...(props as ComponentProps<C>)} />
-      </div>
-    )
+  const Fallback = forwardRef<HTMLElement, ComponentPropsWithoutRef<C>>(
+    (props, ref) => {
+      const containerRef = useRef<HTMLDivElement | null>(null);
+
+      useIsomorphicLayoutEffect(() => {
+        // withTether monitors the forwarded ref, so map it to the first DOM child.
+        const container = containerRef.current;
+        const element = container?.firstElementChild as HTMLElement | null;
+
+        assignRef(ref, element);
+
+        return () => {
+          assignRef(ref, null);
+        };
+      });
+
+      return (
+        <div
+          ref={containerRef}
+          style={LOCATOR_WRAPPER_STYLE}
+          data-child-locator-wrapper=""
+        >
+          {/* Render original component while keeping layout untouched. */}
+          <Component {...(props as ComponentProps<C>)} />
+        </div>
+      );
+    }
   );
 
   const componentName = Component.displayName ?? Component.name ?? 'Component';
