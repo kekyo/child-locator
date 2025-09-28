@@ -55,37 +55,23 @@ Use `withChildLocator` to make components trackable:
 ```tsx
 import React from 'react';
 import { withChildLocator } from 'child-locator';
-import type { WithChildLocatorProps } from 'child-locator';
 
-// Base component (designed for your requirement)
-const BaseChildItem = ({
-  id,
-  children,
-}: {
+type BaseChildItemProps = {
   id: number;
   children: React.ReactNode;
-}) => {
-  return (
-    <div
-      data-testid={`child-${id}`}
-      style={{
-        position: 'absolute',
-        left: id * 100,
-        top: id * 80,
-        width: 80,
-        height: 60,
-        border: '1px solid #ccc',
-        backgroundColor: '#f9f9f9',
-      }}
-    >
-      {children}
-    </div>
-  );
 };
 
-// Make it trackable with child-locator
+// Base (simple) component.
+const BaseChildItem = ({ id, children }: BaseChildItemProps) => {
+  return <div data-testid={`child-${id}`}>{children}</div>;
+};
+
+// withChildLocator will inject the DOM anchor automatically.
 const ChildItem = withChildLocator(BaseChildItem);
 ```
+
+When a component does not expose a `ref`, `withChildLocator` automatically injects an invisible wrapper so that the element can still be tracked.
+See the dedicated `withChildLocator` section below for that pattern.
 
 ### 3. Use Detection Hook
 

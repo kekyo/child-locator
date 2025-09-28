@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { forwardRef, useRef, useState } from 'react';
 import {
   useLocator,
   ChildLocatorProvider,
@@ -7,47 +7,53 @@ import {
 import type { DetectedComponent } from 'child-locator';
 
 // Tethered component for tracking
-const BaseChildComponent = ({
-  id,
-  position,
-  backgroundColor = '#e3f2fd',
-  borderColor = '#1976d2',
-}: {
-  id: string;
-  position: { x: number; y: number };
-  backgroundColor?: string;
-  borderColor?: string;
-}) => {
-  return (
-    <div
-      data-testid={id}
-      style={{
-        position: 'absolute',
-        left: position.x,
-        top: position.y,
-        width: '120px',
-        height: '80px',
-        padding: '10px',
-        backgroundColor,
-        border: `2px solid ${borderColor}`,
-        borderRadius: '8px',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        color: borderColor,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-      }}
-    >
-      <div>{id}</div>
-      <small>
-        ({position.x}, {position.y})
-      </small>
-    </div>
-  );
-};
+const BaseChildComponent = forwardRef<
+  HTMLDivElement,
+  {
+    id: string;
+    position: { x: number; y: number };
+    backgroundColor?: string;
+    borderColor?: string;
+  }
+>(
+  (
+    { id, position, backgroundColor = '#e3f2fd', borderColor = '#1976d2' },
+    ref
+  ) => {
+    return (
+      <div
+        ref={ref}
+        data-testid={id}
+        style={{
+          position: 'absolute',
+          left: position.x,
+          top: position.y,
+          width: '120px',
+          height: '80px',
+          padding: '10px',
+          backgroundColor,
+          border: `2px solid ${borderColor}`,
+          borderRadius: '8px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          color: borderColor,
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        }}
+      >
+        <div>{id}</div>
+        <small>
+          ({position.x}, {position.y})
+        </small>
+      </div>
+    );
+  }
+);
+
+BaseChildComponent.displayName = 'BaseChildComponent';
 
 const ChildComponent = withChildLocator(BaseChildComponent);
 

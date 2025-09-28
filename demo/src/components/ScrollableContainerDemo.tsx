@@ -7,16 +7,16 @@ import {
 import type { DetectedComponent } from 'child-locator';
 
 // Tethered component for tracking
-const BaseMockComponent = ({
-  children,
-  height = 60,
-  backgroundColor = '#f0f0f0',
-  borderColor = '#ccc',
-}: {
+const BaseMockComponent: React.FC<{
   children: React.ReactNode;
   height?: number;
   backgroundColor?: string;
   borderColor?: string;
+}> = ({
+  children,
+  height = 60,
+  backgroundColor = '#f0f0f0',
+  borderColor = '#ccc',
 }) => {
   return (
     <div
@@ -33,6 +33,8 @@ const BaseMockComponent = ({
     </div>
   );
 };
+
+BaseMockComponent.displayName = 'BaseMockComponent';
 
 const MockComponent = withChildLocator(BaseMockComponent);
 

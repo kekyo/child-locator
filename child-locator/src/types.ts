@@ -3,7 +3,13 @@
 // Under MIT.
 // https://github.com/kekyo/child-locator/
 
-import type { ReactElement, RefObject } from 'react';
+import type {
+  ComponentPropsWithRef,
+  ComponentType,
+  ReactElement,
+  Ref,
+  RefObject,
+} from 'react';
 
 /**
  * CSS unit value type that supports both numeric (px) and string (%, vw, vh, rem, em) values
@@ -71,3 +77,39 @@ export interface WithChildLocatorProps {
   /** Metadata for tracking this component */
   tetherMetadata?: ChildLocatorMetadata;
 }
+
+type RefProp<C extends ComponentType<any>> =
+  ComponentPropsWithRef<C> extends {
+    ref?: infer R;
+  }
+    ? R
+    : never;
+
+type HasAcceptableRef<C extends ComponentType<any>> = [RefProp<C>] extends [
+  never,
+]
+  ? false
+  : [RefProp<C>] extends [undefined]
+    ? false
+    : NonNullable<RefProp<C>> extends Ref<infer Instance>
+      ? Instance extends Element | null
+        ? true
+        : false
+      : false;
+
+/**
+ * Component type that exposes a DOM-compatible ref target.
+ * Used to ensure withChildLocator only accepts ref-forwarding components.
+ */
+export type LocatorCompatibleComponent<C extends ComponentType<any>> =
+  HasAcceptableRef<C> extends true ? C : never;
+
+/**
+ * Extracts the element type exposed through a locator-compatible component's ref.
+ */
+export type LocatorComponentRef<C extends ComponentType<any>> =
+  HasAcceptableRef<C> extends true
+    ? NonNullable<RefProp<C>> extends Ref<infer Instance>
+      ? Instance
+      : never
+    : never;

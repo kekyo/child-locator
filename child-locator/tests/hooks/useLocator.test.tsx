@@ -40,6 +40,10 @@ const BaseTestChild = React.forwardRef<
 
 BaseTestChild.displayName = 'BaseTestChild';
 
+const InvalidChild = ({ id }: { id: number }) => <div>{id}</div>;
+// @ts-expect-error withChildLocator requires a component that forwards its ref to a DOM element.
+withChildLocator(InvalidChild);
+
 // Wrap with tether to enable component tracking
 const TestChild = withChildLocator(BaseTestChild);
 

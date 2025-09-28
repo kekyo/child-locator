@@ -65,26 +65,23 @@ Use `withChildLocator` to make components trackable:
 ```tsx
 import React from 'react';
 import { withChildLocator } from 'child-locator';
-import type { WithChildLocatorProps } from 'child-locator';
 
-// Base component (designed for your requirement)
-const BaseChildItem = ({
-  id,
-  children,
-}: {
+type BaseChildItemProps = {
   id: number;
   children: React.ReactNode;
-}) => {
-  return (
-    <div data-testid={`child-${id}`}>
-      {children}
-    </div>
-  );
 };
 
-// Make it trackable with child-locator
+// Base (simple) component.
+const BaseChildItem = ({ id, children }: BaseChildItemProps) => {
+  return (<div data-testid={`child-${id}`}>{children}</div>);
+};
+
+// withChildLocator will inject the DOM anchor automatically.
 const ChildItem = withChildLocator(BaseChildItem);
 ```
+
+When a component does not expose a `ref`, `withChildLocator` automatically injects an invisible wrapper so that the element can still be tracked.
+See the dedicated `withChildLocator` section below for that pattern.
 
 ### 3. Use Detection Hook
 
@@ -158,17 +155,35 @@ import { ChildLocatorProvider } from 'child-locator'
 
 Higher-Order Component that makes a component trackable by child-locator.
 
-```tsx
-import { withChildLocator } from 'child-locator'
-import type { WithChildLocatorProps } from 'child-locator'
+When the supplied component does not forward its `ref`,
+the HOC automatically wraps it in a DOM element with `display: contents` and reuses that wrapper as the tether anchor. 
+The following example demonstrates defining and using a component that exposes its own `ref`.
+With this approach, the wrapper element is not used automatically,
+this can be employed when fine-tuning the layout:
 
-const TrackableComponent = withChildLocator(YourBaseComponent)
+```tsx
+import React, { forwardRef } from 'react';
+import { withChildLocator } from 'child-locator';
+
+type DemoProps = {
+  label: string;
+};
+
+// Forward your own ref when you need to control the anchor element.
+const DemoItem = forwardRef<HTMLDivElement, DemoProps>(({ label }, ref) => (
+  <div ref={ref} className="demo-item">
+    {label}
+  </div>
+));
+
+// Wrap the forwardRef component so child-locator uses your DOM node directly.
+const TrackableComponent = withChildLocator(DemoItem);
 
 // Usage with metadata
 <TrackableComponent 
+  label="Item 1"
   tetherMetadata={{ id: 'item-1', type: 'grid-item' }}
-  // ... other props
-/>
+/>;
 ```
 
 #### WithChildLocatorProps
